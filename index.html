@@ -111,14 +111,14 @@ input,textarea,select,button{font-family:inherit}
 .add-btn{background:#4f6ef7;color:white;border:none;border-radius:5px;padding:6px 10px;font-size:11px;cursor:pointer;font-weight:700}
 
 /* 공유 패널 컬럼 */
-.col-shared{width:300px;flex-shrink:0}
+.col-shared{width:300px;flex-shrink:0;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .panel-search{flex:1;background:#0f1117;border:1px solid #2a2d3e;border-radius:4px;padding:3px 7px;color:#e8eaf0;font-size:11px;outline:none}
 .panel-search:focus{border-color:#4f6ef7}
 .shared-area{flex:1;background:#0f1117;border:none;color:#e8eaf0;font-size:12px;padding:10px;resize:none;outline:none;line-height:1.8}
 .panel-add-btn{background:#4f6ef7;color:white;border:none;border-radius:4px;padding:2px 8px;font-size:13px;cursor:pointer;font-weight:700;flex-shrink:0}
 
 /* 카드 리스트 */
-.card-list{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:5px}
+.card-list{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:5px;min-height:0}
 .notice-card{background:#1a1d2e;border:1px solid #2a2d3e;border-radius:6px;padding:9px 10px;animation:fadeIn .2s ease}
 .notice-card:hover{border-color:#3a4060}
 .notice-card.search-match{border-color:#4f6ef7;background:#1a2050}
@@ -139,6 +139,34 @@ input,textarea,select,button{font-family:inherit}
 .nc-result.empty .nc-result-content{color:#3a4060}
 .nc-memo{color:#6b7db3;font-size:11px;margin-top:3px;padding-top:3px;border-top:1px solid #1e2135}
 .nc-actions{display:flex;gap:4px;margin-top:5px}
+.nc-new{cursor:pointer;border:2px dashed #2a2d3e;background:transparent;display:flex;align-items:center;justify-content:center;padding:10px;transition:all .15s}
+.nc-new:hover{border-color:#4f6ef7;background:#1a1d2e}
+.nc-row1{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.nc-row2{display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap}
+.nc-sep{color:#3a4060;font-size:11px}
+.nc-location{color:#9aa5c4;font-size:11px}
+.nc-job-inline{background:#252840;color:#9aa5c4;border-radius:3px;padding:1px 6px;font-size:10px;margin-left:2px}
+.nc-inline-btns{margin-left:auto;display:flex;gap:3px;opacity:0;transition:opacity .15s}
+.notice-card:hover .nc-inline-btns{opacity:1}
+.nc-del-btn{background:#2e1a1a;color:#ef5350;border:none;border-radius:3px;padding:1px 6px;font-size:10px;cursor:pointer}
+.nc-view{cursor:pointer}
+.nc-edit{display:flex;flex-direction:column;gap:5px}
+.nc-edit-row{display:flex;gap:5px}
+.nc-input{flex:1;background:#0f1117;border:1px solid #2a2d3e;border-radius:4px;padding:5px 8px;color:#e8eaf0;font-size:12px;outline:none}
+.nc-input:focus{border-color:#4f6ef7}
+.nc-ta{height:65px;resize:vertical;line-height:1.5}
+.nc-edit-actions{display:flex;gap:5px;justify-content:flex-end}
+.nc-save-btn{background:#4f6ef7;color:white;border:none;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:700}
+.nc-cancel-btn{background:#2a2d3e;color:#9aa5c4;border:none;border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer}
+.card-group{margin-bottom:6px;border:1px solid #2a2d3e;border-radius:6px;}
+.card-group-header{display:flex;align-items:center;gap:7px;padding:7px 10px;background:#1a1d2e;cursor:pointer;user-select:none;transition:background .15s}
+.card-group-header:hover{background:#1e2135}
+.card-group-title{font-size:11px;font-weight:700;flex:1}
+.card-group-cnt{font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.card-group-toggle{color:#6b7db3;font-size:10px;flex-shrink:0}
+.card-group-body{background:#0f1117}
+.card-group-body .notice-card{border-radius:0;border-left:none;border-right:none;border-top:none;border-bottom:1px solid #1e2135}
+.card-group-body .notice-card:last-child{border-bottom:none}
 .card-edit-btn{background:#252840;color:#9aa5c4;border:none;border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer}
 .card-del-btn{background:#2e1a1a;color:#ef5350;border:none;border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer}
 
@@ -331,10 +359,10 @@ input,textarea,select,button{font-family:inherit}
       <div class="col col-shared">
         <div class="col-header">
           <span class="col-title">📋 지점접수현황</span>
-          <input class="panel-search" id="notice-search" placeholder="검색 후 Enter"/>
-          <button class="panel-add-btn" onclick="openCardModal('notice')">＋</button>
-        </div>
-        <div class="card-list" id="notice-cards"></div>
+            </div>
+            <textarea id="notice-area" style="width:100%;height:100%;background:#0f1117;color:#fff;padding:10px;border:none;resize:none;" placeholder="예시:
+            홍길동 / 송파 / 2.5억 / 진행중
+            김철수 / 강남 / 3억 / 승인"></textarea>
       </div>
 
     </div>
@@ -376,6 +404,64 @@ input,textarea,select,button{font-family:inherit}
           <tbody id="stats-tbody"><tr><td colspan="6" class="stats-empty">날짜를 선택하세요</td></tr></tbody>
         </table>
       </div>
+    </div>
+  </div>
+</div>
+<!-- 진행건 모달 -->
+<div id="progress-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="progress-modal-title">진행건 추가</span>
+      <button class="modal-close" onclick="closeProgressModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row"><label class="modal-label">이름 *</label><input class="modal-input" id="p-name" placeholder="홍길동"/></div>
+      <div class="modal-row"><label class="modal-label">금액</label><input class="modal-input" id="p-amount" placeholder="2.5억, 3000만원"/></div>
+      <div class="modal-row"><label class="modal-label">금고명</label><input class="modal-input" id="p-bank" placeholder="북서울금고"/></div>
+      <div class="modal-row"><label class="modal-label">날짜</label><input class="modal-input" id="p-date" placeholder="4월 1일(수) 14시"/></div>
+      <div class="modal-row"><label class="modal-label">상태</label>
+        <select class="modal-select" id="p-status">
+          <option value="자서예정">자서예정</option>
+          <option value="자서미정">자서미정</option>
+          <option value="브릿지예정">브릿지예정</option>
+          <option value="브릿지미정">브릿지미정</option>
+          <option value="브릿지확인필요">브릿지확인필요</option>
+          <option value="당일기표예정">당일기표예정</option>
+          <option value="기표예정">기표예정</option>
+          <option value="기표미정">기표미정</option>
+          <option value="완료">완료</option>
+        </select>
+      </div>
+      <div class="modal-row"><label class="modal-label">메모</label><textarea class="modal-input modal-textarea" id="p-memo" placeholder="추가 메모..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel-btn" onclick="closeProgressModal()">취소</button>
+      <button class="modal-save-btn" onclick="saveProgressCard()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 지점접수현황 모달 -->
+<div id="card-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">접수 추가</span>
+      <button class="modal-close" onclick="closeCardModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row"><label class="modal-label">거래처 *</label><input class="modal-input" id="card-branch" placeholder="아이덴, 결초, 박팀..."/></div>
+      <div class="modal-row"><label class="modal-label">날짜</label><input class="modal-input" id="card-date" placeholder="03.31"/></div>
+      <div class="modal-row"><label class="modal-label">고객명 *</label><input class="modal-input" id="card-name" placeholder="홍길동(공동명의)"/></div>
+      <div class="modal-row"><label class="modal-label">물건지</label><input class="modal-input" id="card-location" placeholder="서울 송파 아파트"/></div>
+      <div class="modal-row"><label class="modal-label">재직</label><input class="modal-input" id="card-job" placeholder="실사업자, 세입자후순위..."/></div>
+      <div class="modal-row"><label class="modal-label">심사결과</label>
+        <textarea class="modal-input modal-textarea" id="card-results" placeholder="금고명-결과&#10;금고명-★한도발생 2.5&#10;금고명-※검토중" style="height:90px"></textarea>
+      </div>
+      <div class="modal-row"><label class="modal-label">메모</label><input class="modal-input" id="card-memo" placeholder="추가 메모"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel-btn" onclick="closeCardModal()">취소</button>
+      <button class="modal-save-btn" onclick="saveCard()">저장</button>
     </div>
   </div>
 </div>
@@ -535,65 +621,155 @@ function renderCards(key, searchKw){
   }
 
   if(key==="progress"){
-    // 진행건 카드 (이름/금액/금고/날짜/상태/메모)
-    const STATUS_CLS={"자서예정":"#1a2e3a","자서완료":"#1a2e1a","브릿지예정":"#2a1a3a","브릿지완료":"#1a2e1a","기표예정":"#2e1a10","기표완료":"#1a2e1a","진행중":"#252840","보류":"#2a2d3e","완료":"#1a2e1a"};
-    const STATUS_CLR={"자서예정":"#7cc8f8","자서완료":"#4caf50","브릿지예정":"#b07cf8","브릿지완료":"#4caf50","기표예정":"#f8964a","기표완료":"#4caf50","진행중":"#7c9ef8","보류":"#9aa5c4","완료":"#4caf50"};
-    el.innerHTML=filtered.map(c=>{
-      const bg=STATUS_CLS[c.status]||"#252840", clr=STATUS_CLR[c.status]||"#9aa5c4";
-      const match=kw&&[c.name,c.amount,c.bank,c.date,c.memo].join(" ").toLowerCase().includes(kw);
-      return`<div class='notice-card${match?" search-match":""}' draggable="true" data-id='${c.id}' data-key='progress'>
-        <div style='display:flex;align-items:flex-start;gap:6px;margin-bottom:4px'>
-          <span style='color:#e8eaf0;font-weight:700;font-size:13px;flex:1'>${esc(c.name||"")}</span>
-          ${c.amount?`<span style='color:#7c9ef8;font-size:12px;font-weight:600'>${esc(c.amount)}</span>`:""}
-          ${c.status?`<span style='font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;background:${bg};color:${clr};flex-shrink:0'>${esc(c.status)}</span>`:""}
+    // 상태 그룹 정의 (순서 고정)
+    const GROUPS=[
+      {key:"자서예정",   label:"✏ 자서 예정",      bg:"#1a2e3a", clr:"#7cc8f8"},
+      {key:"자서미정",   label:"⏳ 자서 미정",      bg:"#1e1e2e", clr:"#9aa5c4"},
+      {key:"브릿지예정", label:"🔗 브릿지 예정",    bg:"#2a1a3a", clr:"#b07cf8"},
+      {key:"브릿지미정", label:"⏳ 브릿지 미정",    bg:"#1e1e2e", clr:"#9aa5c4"},
+      {key:"브릿지확인필요",label:"🔍 브릿지 확인필요",bg:"#2a1a2e",clr:"#e0a0f8"},
+      {key:"당일기표예정",label:"📌 당일기표 예정",  bg:"#2e1a10", clr:"#ffb060"},
+      {key:"기표예정",   label:"📋 기표 예정",      bg:"#2e2010", clr:"#f8964a"},
+      {key:"기표미정",   label:"⏳ 기표 미정",      bg:"#1e1e2e", clr:"#9aa5c4"},
+      {key:"완료",       label:"✅ 완료",           bg:"#1a2e1a", clr:"#4caf50"},
+    ];
+    const STATUS_BG=Object.fromEntries(GROUPS.map(g=>[g.key,g.bg]));
+    const STATUS_CLR2=Object.fromEntries(GROUPS.map(g=>[g.key,g.clr]));
+
+    // 그룹별로 카드 분류
+    const grouped={};
+    GROUPS.forEach(g=>grouped[g.key]=[]);
+    filtered.forEach(c=>{
+      const gk=c.status&&grouped[c.status]!==undefined?c.status:"자서예정";
+      grouped[gk].push(c);
+    });
+
+    let html="";
+    GROUPS.forEach(g=>{
+      const list=grouped[g.key];
+      if(!list.length&&!kw)return; // 검색 없을 때 비어있는 그룹 숨김
+      const gid="pgrp-"+g.key.replace(/\s/g,"");
+      const isOpen=list.length>0;
+      html+=`<div class='card-group' id='grp-${gid}'>
+        <div class='card-group-header' onclick="toggleCardGroup('${gid}')">
+          <span class='card-group-title' style='color:${g.clr}'>${g.label}</span>
+          <span class='card-group-cnt' style='background:${g.bg};color:${g.clr}'>${list.length}</span>
+          <span class='card-group-toggle' id='tog-${gid}'>${isOpen?"▼":"▶"}</span>
         </div>
-        ${c.bank?`<div style='color:#9aa5c4;font-size:11px;margin-bottom:2px'>🏦 ${esc(c.bank)}</div>`:""}
-        ${c.date?`<div style='color:#4f6ef7;font-size:11px;margin-bottom:3px'>📅 ${esc(c.date)}</div>`:""}
-        ${c.memo?`<div style='color:#6b7db3;font-size:11px;white-space:pre-wrap;line-height:1.5'>${esc(c.memo)}</div>`:""}
-        <div class='nc-actions'>
-          <button class='card-edit-btn' data-id='${c.id}' data-key='progress'>수정</button>
-          <button class='card-del-btn' data-id='${c.id}' data-key='progress'>삭제</button>
+        <div class='card-group-body' id='body-${gid}' style='display:${isOpen?"block":"none"}'>
+          ${list.length?list.map(c=>`
+            <div class='notice-card' draggable='true' data-id='${c.id}' data-key='progress'>
+              <div style='display:flex;align-items:flex-start;gap:6px;margin-bottom:4px'>
+                <span style='color:#e8eaf0;font-weight:700;font-size:13px;flex:1'>${esc(c.name||"")}</span>
+                ${c.amount?`<span style='color:#7c9ef8;font-size:12px;font-weight:600'>${esc(c.amount)}</span>`:""}
+              </div>
+              ${c.bank?`<div style='color:#9aa5c4;font-size:11px;margin-bottom:2px'>🏦 ${esc(c.bank)}</div>`:""}
+              ${c.date?`<div style='color:#4f6ef7;font-size:11px;margin-bottom:3px'>📅 ${esc(c.date)}</div>`:""}
+              ${c.memo?`<div style='color:#6b7db3;font-size:11px;white-space:pre-wrap;line-height:1.5'>${esc(c.memo)}</div>`:""}
+              <div class='nc-actions'>
+                <button class='card-edit-btn' data-id='${c.id}' data-key='progress'>수정</button>
+                <button class='card-del-btn' data-id='${c.id}' data-key='progress'>삭제</button>
+              </div>
+            </div>`).join("")
+          :"<div style='color:#3a4060;padding:8px 10px;font-size:11px'>없음</div>"}
         </div>
       </div>`;
-    }).join("");
+    });
+    el.innerHTML=html||"<div style='color:#3a4060;padding:20px;text-align:center;font-size:12px'>카드가 없습니다</div>";
+
+    el.querySelectorAll(".card-edit-btn").forEach(btn=>btn.addEventListener("click",()=>openProgressModal(btn.dataset.id)));
+    el.querySelectorAll(".card-del-btn").forEach(btn=>btn.addEventListener("click",()=>deleteCard("progress",btn.dataset.id)));
+    if(kw){const first=el.querySelector(".search-match");if(first)first.scrollIntoView({block:"center"});}
+    initCardDrag(el,"progress");
   } else {
-    // 지점접수현황 카드
-    el.innerHTML=filtered.map(c=>{
+    // 지점접수현황 카드 - 빈 카드(새 추가) + 기존 카드
+    const newCard=`<div class='notice-card nc-new' id='nc-new-btn' title='클릭하여 새 접수 추가'>
+      <span style='color:#3a4060;font-size:12px'>＋ 새 접수 추가</span>
+    </div>`;
+
+    const cards_html=filtered.map(c=>{
       const results=parseResults(c.results);
       const match=kw&&[c.branch,c.name,c.location,c.job,c.results,c.memo].join(" ").toLowerCase().includes(kw);
-      return`<div class='notice-card${match?" search-match":""}' draggable="true" data-id='${c.id}' data-key='notice'>
-          <span class='nc-branch'>${esc(c.branch||"")}</span>
-          ${c.date?`<span class='nc-date'>${esc(c.date)}</span>`:""}
+      return`<div class='notice-card${match?" search-match":""}' draggable='true' data-id='${c.id}' data-key='notice'>
+        <div class='nc-view'>
+          <div class='nc-row1'>
+            <span class='nc-branch'>${esc(c.branch||"")}</span>
+            ${c.date?`<span class='nc-date'>${esc(c.date)}</span>`:""}
+            <span class='nc-inline-btns'>
+              <button class='nc-del-btn' data-id='${c.id}'>✕</button>
+            </span>
+          </div>
+          <div class='nc-row2'>
+            <span class='nc-customer'>${esc(c.name||"")}</span>
+            ${c.location?`<span class='nc-sep'>·</span><span class='nc-location'>${esc(c.location)}</span>`:""}
+            ${c.job?`<span class='nc-job-inline'>${esc(c.job)}</span>`:""}
+          </div>
+          ${results.length?`<div class='nc-results'>${results.map(r=>`
+            <div class='nc-result ${r.type}'>
+              <span class='nc-result-bank'>${esc(r.bank)}</span>
+              ${r.content?`<span class='nc-result-content'>- ${esc(r.content)}</span>`:""}
+            </div>`).join("")}</div>`:""}
+          ${c.memo?`<div class='nc-memo'>${esc(c.memo)}</div>`:""}
         </div>
-        <div class='nc-customer'>${esc(c.name||"")}</div>
-        ${c.location?`<div class='nc-location'>📍 ${esc(c.location)}</div>`:""}
-        ${c.job?`<span class='nc-job'>${esc(c.job)}</span>`:""}
-        ${results.length?`<div class='nc-results'>${results.map(r=>`
-          <div class='nc-result ${r.type}'>
-            <span class='nc-result-bank'>${esc(r.bank)}</span>
-            ${r.content?`<span class='nc-result-content'>- ${esc(r.content)}</span>`:""}
-          </div>`).join("")}</div>`:""}
-        ${c.memo?`<div class='nc-memo'>${esc(c.memo)}</div>`:""}
-        <div class='nc-actions'>
-          <button class='card-edit-btn' data-id='${c.id}' data-key='notice'>수정</button>
-          <button class='card-del-btn' data-id='${c.id}' data-key='notice'>삭제</button>
+        <div class='nc-edit hidden'>
+          <div class='nc-edit-row'><input class='nc-input' placeholder='거래처' data-f='branch' value='${esc(c.branch||"")}'/><input class='nc-input' placeholder='날짜 (03.31)' data-f='date' value='${esc(c.date||"")}' style='width:80px'/></div>
+          <div class='nc-edit-row'><input class='nc-input' placeholder='고객명' data-f='name' value='${esc(c.name||"")}'/></div>
+          <div class='nc-edit-row'><input class='nc-input' placeholder='물건지' data-f='location' value='${esc(c.location||"")}'/></div>
+          <div class='nc-edit-row'><input class='nc-input' placeholder='재직/특이사항' data-f='job' value='${esc(c.job||"")}'/></div>
+          <div class='nc-edit-row'><textarea class='nc-input nc-ta' placeholder='금고명-결과\n금고명-★한도발생 2.5' data-f='results'>${esc(c.results||"")}</textarea></div>
+          <div class='nc-edit-row'><input class='nc-input' placeholder='메모' data-f='memo' value='${esc(c.memo||"")}'/></div>
+          <div class='nc-edit-actions'>
+            <button class='nc-save-btn' data-id='${c.id}'>저장</button>
+            <button class='nc-cancel-btn'>취소</button>
+          </div>
         </div>
       </div>`;
     }).join("");
+
+    el.innerHTML=newCard+cards_html;
+
+    // 새 카드 추가 버튼
+    el.querySelector("#nc-new-btn").addEventListener("click",()=>openCardModal("notice"));
+
+    // 카드 뷰 클릭 → 인라인 편집 전환
+    el.querySelectorAll(".notice-card[data-id]").forEach(card=>{
+      card.querySelector(".nc-view").addEventListener("click",e=>{
+        if(e.target.closest(".nc-del-btn"))return;
+        card.querySelector(".nc-view").classList.add("hidden");
+        card.querySelector(".nc-edit").classList.remove("hidden");
+        card.querySelector(".nc-input").focus();
+      });
+      card.querySelector(".nc-cancel-btn").addEventListener("click",()=>{
+        card.querySelector(".nc-view").classList.remove("hidden");
+        card.querySelector(".nc-edit").classList.add("hidden");
+      });
+      card.querySelector(".nc-save-btn").addEventListener("click",async()=>{
+        const id=card.querySelector(".nc-save-btn").dataset.id;
+        const data={updatedAt:new Date().toISOString()};
+        card.querySelectorAll(".nc-input[data-f]").forEach(inp=>data[inp.dataset.f]=inp.value.trim());
+        await updateDoc(doc(db,"notice_cards",id),data);
+      });
+      card.querySelector(".nc-del-btn").addEventListener("click",async e=>{
+        e.stopPropagation();
+        if(!confirm("삭제할까요?"))return;
+        await deleteDoc(doc(db,"notice_cards",card.dataset.id));
+      });
+    });
+
+    if(kw){const first=el.querySelector(".search-match");if(first)first.scrollIntoView({block:"center"});}
+    initCardDrag(el,"notice");
   }
 
-  el.querySelectorAll(".card-edit-btn").forEach(btn=>btn.addEventListener("click",()=>{
-    if(btn.dataset.key==="progress") openProgressModal(btn.dataset.id);
-    else openCardModal("notice",btn.dataset.id);
-  }));
-  el.querySelectorAll(".card-del-btn").forEach(btn=>btn.addEventListener("click",()=>deleteCard(btn.dataset.key,btn.dataset.id)));
-  if(kw){const first=el.querySelector(".search-match");if(first)first.scrollIntoView({block:"center"});}
-
-  // 드래그 앤 드롭
-  initCardDrag(el, key);
-}
-
 let cardDragId=null, cardDragKey=null;
+}
+window.toggleCardGroup=(gid)=>{
+  const body=document.getElementById("body-"+gid);
+  const tog=document.getElementById("tog-"+gid);
+  if(!body)return;
+  const open=body.style.display==="none";
+  body.style.display=open?"block":"none";
+  tog.textContent=open?"▼":"▶";
+};
 
 function initCardDrag(el, key){
   el.querySelectorAll(".notice-card").forEach(card=>{
@@ -1012,67 +1188,52 @@ function renderForm(id){
   });
 }
 
+// =====================
+// 지점접수 메모장 기능
+// =====================
+function initNoticeMemo(){
+  const ref = doc(db, "shared", "notice");
+
+  // 🔹 실시간 불러오기
+  onSnapshot(ref, snap=>{
+    if(snap.exists()){
+      document.getElementById("notice-area").value = snap.data().text || "";
+    }
+  });
+
+  // 🔹 입력하면 자동 저장
+  let timer;
+  document.getElementById("notice-area").addEventListener("input", ()=>{
+    clearTimeout(timer);
+    timer = setTimeout(async ()=>{
+      await setDoc(ref, {
+        text: document.getElementById("notice-area").value,
+        updatedAt: new Date().toISOString()
+      });
+    }, 500);
+  });
+
+  // 🔹 검색 기능 (고객명)
+  document.getElementById("notice-search").addEventListener("keydown", e=>{
+    if(e.key === "Enter"){
+      const keyword = document.getElementById("notice-search").value.trim().toLowerCase();
+      const textarea = document.getElementById("notice-area");
+      const text = textarea.value.toLowerCase();
+
+      const index = text.indexOf(keyword);
+
+      if(index >= 0){
+        textarea.focus();
+        textarea.setSelectionRange(index, index + keyword.length);
+      }else{
+        alert("검색 결과 없음");
+      }
+    }
+  });
+}
+initNoticeMemo();
 function renderGuGrid(){return(REGIONS[activeSido]||[]).map(gu=>{const k=`${activeSido} ${gu}`,on=formData.regions.includes(k);return`<label class="gu-label${on?" on":""}" data-gu="${gu}"><input type="checkbox" ${on?"checked":""}> ${esc(gu)}</label>`;}).join("");}
 function bindGuEvents(){$("gu-grid").querySelectorAll(".gu-label").forEach(el=>{el.addEventListener("click",e=>{const gu=el.dataset.gu,k=`${activeSido} ${gu}`,cb=el.querySelector("input");if(e.target!==cb)cb.checked=!cb.checked;if(cb.checked){if(!formData.regions.includes(k))formData.regions.push(k);}else formData.regions=formData.regions.filter(r=>r!==k);el.classList.toggle("on",cb.checked);});});}
 </script>
-<!-- 진행건 모달 -->
-<div id="progress-modal" class="modal-overlay hidden">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-title" id="progress-modal-title">진행건 추가</span>
-      <button class="modal-close" onclick="closeProgressModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-row"><label class="modal-label">이름 *</label><input class="modal-input" id="p-name" placeholder="홍길동"/></div>
-      <div class="modal-row"><label class="modal-label">금액</label><input class="modal-input" id="p-amount" placeholder="2.5억, 3000만원"/></div>
-      <div class="modal-row"><label class="modal-label">금고명</label><input class="modal-input" id="p-bank" placeholder="북서울금고"/></div>
-      <div class="modal-row"><label class="modal-label">날짜</label><input class="modal-input" id="p-date" placeholder="4월 1일(수) 14시"/></div>
-      <div class="modal-row"><label class="modal-label">상태</label>
-        <select class="modal-select" id="p-status">
-          <option value="자서예정">자서예정</option>
-          <option value="자서완료">자서완료</option>
-          <option value="브릿지예정">브릿지예정</option>
-          <option value="브릿지완료">브릿지완료</option>
-          <option value="기표예정">기표예정</option>
-          <option value="기표완료">기표완료</option>
-          <option value="진행중">진행중</option>
-          <option value="보류">보류</option>
-          <option value="완료">완료</option>
-        </select>
-      </div>
-      <div class="modal-row"><label class="modal-label">메모</label><textarea class="modal-input modal-textarea" id="p-memo" placeholder="추가 메모..."></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-cancel-btn" onclick="closeProgressModal()">취소</button>
-      <button class="modal-save-btn" onclick="saveProgressCard()">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- 지점접수현황 모달 -->
-<div id="card-modal" class="modal-overlay hidden">
-  <div class="modal-box" style="max-width:500px">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-title">접수 추가</span>
-      <button class="modal-close" onclick="closeCardModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-row"><label class="modal-label">거래처 *</label><input class="modal-input" id="card-branch" placeholder="아이덴, 결초, 박팀..."/></div>
-      <div class="modal-row"><label class="modal-label">날짜</label><input class="modal-input" id="card-date" placeholder="03.31"/></div>
-      <div class="modal-row"><label class="modal-label">고객명 *</label><input class="modal-input" id="card-name" placeholder="홍길동(공동명의)"/></div>
-      <div class="modal-row"><label class="modal-label">물건지</label><input class="modal-input" id="card-location" placeholder="서울 송파 아파트"/></div>
-      <div class="modal-row"><label class="modal-label">재직</label><input class="modal-input" id="card-job" placeholder="실사업자, 세입자후순위..."/></div>
-      <div class="modal-row"><label class="modal-label">심사결과</label>
-        <textarea class="modal-input modal-textarea" id="card-results" placeholder="금고명-결과&#10;금고명-★한도발생 2.5&#10;금고명-※검토중" style="height:90px"></textarea>
-      </div>
-      <div class="modal-row"><label class="modal-label">메모</label><input class="modal-input" id="card-memo" placeholder="추가 메모"/></div>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-cancel-btn" onclick="closeCardModal()">취소</button>
-      <button class="modal-save-btn" onclick="saveCard()">저장</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>

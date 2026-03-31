@@ -492,13 +492,12 @@ let progressCards=[], noticeCards=[];
 let cardModalKey="", cardEditId=null;
 
 function initCards(){
-  // 진행건도 같은 구조로
   onSnapshot(collection(db,"progress_cards"),snap=>{
-    progressCards=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+    progressCards=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999));
     renderCards("progress");
   });
   onSnapshot(collection(db,"notice_cards"),snap=>{
-    noticeCards=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+    noticeCards=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999));
     renderCards("notice");
   });
   $("progress-search").addEventListener("keydown",e=>{if(e.key==="Enter")renderCards("progress",$("progress-search").value);});
@@ -542,7 +541,7 @@ function renderCards(key, searchKw){
     el.innerHTML=filtered.map(c=>{
       const bg=STATUS_CLS[c.status]||"#252840", clr=STATUS_CLR[c.status]||"#9aa5c4";
       const match=kw&&[c.name,c.amount,c.bank,c.date,c.memo].join(" ").toLowerCase().includes(kw);
-      return`<div class='notice-card${match?" search-match":""}'>
+      return`<div class='notice-card${match?" search-match":""}' draggable="true" data-id='${c.id}' data-key='progress'>
         <div style='display:flex;align-items:flex-start;gap:6px;margin-bottom:4px'>
           <span style='color:#e8eaf0;font-weight:700;font-size:13px;flex:1'>${esc(c.name||"")}</span>
           ${c.amount?`<span style='color:#7c9ef8;font-size:12px;font-weight:600'>${esc(c.amount)}</span>`:""}
@@ -562,8 +561,7 @@ function renderCards(key, searchKw){
     el.innerHTML=filtered.map(c=>{
       const results=parseResults(c.results);
       const match=kw&&[c.branch,c.name,c.location,c.job,c.results,c.memo].join(" ").toLowerCase().includes(kw);
-      return`<div class='notice-card${match?" search-match":""}'>
-        <div class='nc-header'>
+      return`<div class='notice-card${match?" search-match":""}' draggable="true" data-id='${c.id}' data-key='notice'>
           <span class='nc-branch'>${esc(c.branch||"")}</span>
           ${c.date?`<span class='nc-date'>${esc(c.date)}</span>`:""}
         </div>
@@ -590,6 +588,37 @@ function renderCards(key, searchKw){
   }));
   el.querySelectorAll(".card-del-btn").forEach(btn=>btn.addEventListener("click",()=>deleteCard(btn.dataset.key,btn.dataset.id)));
   if(kw){const first=el.querySelector(".search-match");if(first)first.scrollIntoView({block:"center"});}
+
+  // 드래그 앤 드롭
+  initCardDrag(el, key);
+}
+
+let cardDragId=null, cardDragKey=null;
+
+function initCardDrag(el, key){
+  el.querySelectorAll(".notice-card").forEach(card=>{
+    card.style.cursor="grab";
+    card.addEventListener("dragstart",e=>{
+      cardDragId=card.dataset.id; cardDragKey=key;
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed="move";
+    });
+    card.addEventListener("dragend",()=>card.classList.remove("dragging"));
+    card.addEventListener("dragover",e=>{e.preventDefault();card.classList.add("drag-over");});
+    card.addEventListener("dragleave",()=>card.classList.remove("drag-over"));
+    card.addEventListener("drop",async e=>{
+      e.preventDefault(); card.classList.remove("drag-over");
+      if(!cardDragId||cardDragId===card.dataset.id||cardDragKey!==key)return;
+      const cards=key==="progress"?progressCards:noticeCards;
+      const col=key==="progress"?"progress_cards":"notice_cards";
+      const all=[...el.querySelectorAll(".notice-card")];
+      const fi=all.findIndex(c=>c.dataset.id===cardDragId);
+      const ti=all.findIndex(c=>c.dataset.id===card.dataset.id);
+      const reord=[...cards];
+      const[mv]=reord.splice(fi,1); reord.splice(ti,0,mv);
+      await Promise.all(reord.map((c,i)=>updateDoc(doc(db,col,c.id),{order:i})));
+    });
+  });
 }
 
 window.openCardModal=(key,editId)=>{

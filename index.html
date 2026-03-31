@@ -85,7 +85,9 @@ input,textarea,select,button{font-family:inherit}
 .search-input:focus{border-color:#4f6ef7}
 .share-btn{background:#005588;color:white;border:none;border-radius:4px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:700}
 .loan-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
-.loan-item{background:#1a1d2e;border:1px solid #2a2d3e;border-radius:6px;padding:9px;animation:fadeIn .2s ease;cursor:grab}
+.loan-item{background:#1a1d2e;border:1px solid #2a2d3e;border-radius:6px;padding:9px;animation:fadeIn .2s ease;cursor:pointer}
+.loan-view{cursor:pointer}
+.loan-view:hover{opacity:.9}
 .loan-item:active{cursor:grabbing}
 .loan-item.dragging{opacity:.5;border:2px dashed #4f6ef7}
 .loan-item.drag-over{border-color:#4caf50;background:#1a2e1a}
@@ -98,11 +100,11 @@ input,textarea,select,button{font-family:inherit}
 .del-btn{background:#7a1e1e;color:white;border:none;border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer}
 .save-btn{background:#1a7a3a;color:white;border:none;border-radius:3px;padding:3px 9px;font-size:10px;cursor:pointer}
 .cancel-btn{background:#2a2d3e;color:#9aa5c4;border:none;border-radius:3px;padding:3px 9px;font-size:10px;cursor:pointer}
-.loan-details{color:#9aa5c4;font-size:11px;white-space:pre-wrap;line-height:1.5;margin-top:4px}
+.loan-details{color:#9aa5c4;font-size:11px;white-space:pre-wrap;line-height:1.5;margin-top:4px;word-break:break-all}
 .edit-form{display:flex;flex-direction:column;gap:4px;margin-top:6px}
 .edit-input{background:#0f1117;border:1px solid #2a2d3e;border-radius:4px;padding:5px 8px;color:#e8eaf0;font-size:11px;outline:none}
 .edit-input:focus{border-color:#4f6ef7}
-.edit-textarea{background:#0f1117;border:1px solid #2a2d3e;border-radius:4px;padding:5px 8px;color:#e8eaf0;font-size:11px;resize:vertical;outline:none;line-height:1.5}
+.edit-textarea{background:#0f1117;border:1px solid #2a2d3e;border-radius:4px;padding:5px 8px;color:#e8eaf0;font-size:11px;resize:vertical;outline:none;line-height:1.5;min-height:60px;width:100%}
 .edit-textarea:focus{border-color:#4f6ef7}
 .edit-actions{display:flex;gap:4px}
 .add-customer-row{padding:8px;border-top:1px solid #2a2d3e;display:flex;gap:6px;flex-shrink:0}
@@ -359,10 +361,8 @@ input,textarea,select,button{font-family:inherit}
       <div class="col col-shared">
         <div class="col-header">
           <span class="col-title">📋 지점접수현황</span>
-            </div>
-            <textarea id="notice-area" style="width:100%;height:100%;background:#0f1117;color:#fff;padding:10px;border:none;resize:none;" placeholder="예시:
-            홍길동 / 송파 / 2.5억 / 진행중
-            김철수 / 강남 / 3억 / 승인"></textarea>
+        </div>
+        <textarea class="shared-area" id="notice-area" placeholder="지점접수현황 입력..."></textarea>
       </div>
 
     </div>
@@ -390,8 +390,10 @@ input,textarea,select,button{font-family:inherit}
   <div id="tab-stats" class="tab-panel hidden">
     <div class="stats-layout">
       <div class="stats-top">
-        <span style="color:#9aa5c4;font-size:13px;font-weight:600">📅 날짜</span>
-        <input class="stats-date-input" type="date" id="stats-date"/>
+        <span style="color:#9aa5c4;font-size:13px;font-weight:600">📅 주간 통계</span>
+        <button id="stats-prev" style="background:#2a2d3e;color:#9aa5c4;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px">◀</button>
+        <span id="stats-week-label" style="color:#e8eaf0;font-size:12px;font-weight:600;min-width:160px;text-align:center"></span>
+        <button id="stats-next" style="background:#2a2d3e;color:#9aa5c4;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px">▶</button>
       </div>
       <div class="stats-cards">
         <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-lbl">총 접수</div></div>
@@ -401,67 +403,9 @@ input,textarea,select,button{font-family:inherit}
       <div class="stats-table-wrap">
         <table class="stats-table">
           <thead><tr><th>지점</th><th class="num">접수</th><th class="num">본진행</th><th class="num" style="color:#4caf50">승인</th><th class="num" style="color:#ef5350">부결</th><th class="num">진행률</th></tr></thead>
-          <tbody id="stats-tbody"><tr><td colspan="6" class="stats-empty">날짜를 선택하세요</td></tr></tbody>
+          <tbody id="stats-tbody"><tr><td colspan='6' class='stats-empty'>주간 데이터 로딩 중...</td></tr></tbody>
         </table>
       </div>
-    </div>
-  </div>
-</div>
-<!-- 진행건 모달 -->
-<div id="progress-modal" class="modal-overlay hidden">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-title" id="progress-modal-title">진행건 추가</span>
-      <button class="modal-close" onclick="closeProgressModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-row"><label class="modal-label">이름 *</label><input class="modal-input" id="p-name" placeholder="홍길동"/></div>
-      <div class="modal-row"><label class="modal-label">금액</label><input class="modal-input" id="p-amount" placeholder="2.5억, 3000만원"/></div>
-      <div class="modal-row"><label class="modal-label">금고명</label><input class="modal-input" id="p-bank" placeholder="북서울금고"/></div>
-      <div class="modal-row"><label class="modal-label">날짜</label><input class="modal-input" id="p-date" placeholder="4월 1일(수) 14시"/></div>
-      <div class="modal-row"><label class="modal-label">상태</label>
-        <select class="modal-select" id="p-status">
-          <option value="자서예정">자서예정</option>
-          <option value="자서미정">자서미정</option>
-          <option value="브릿지예정">브릿지예정</option>
-          <option value="브릿지미정">브릿지미정</option>
-          <option value="브릿지확인필요">브릿지확인필요</option>
-          <option value="당일기표예정">당일기표예정</option>
-          <option value="기표예정">기표예정</option>
-          <option value="기표미정">기표미정</option>
-          <option value="완료">완료</option>
-        </select>
-      </div>
-      <div class="modal-row"><label class="modal-label">메모</label><textarea class="modal-input modal-textarea" id="p-memo" placeholder="추가 메모..."></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-cancel-btn" onclick="closeProgressModal()">취소</button>
-      <button class="modal-save-btn" onclick="saveProgressCard()">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- 지점접수현황 모달 -->
-<div id="card-modal" class="modal-overlay hidden">
-  <div class="modal-box" style="max-width:500px">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-title">접수 추가</span>
-      <button class="modal-close" onclick="closeCardModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-row"><label class="modal-label">거래처 *</label><input class="modal-input" id="card-branch" placeholder="아이덴, 결초, 박팀..."/></div>
-      <div class="modal-row"><label class="modal-label">날짜</label><input class="modal-input" id="card-date" placeholder="03.31"/></div>
-      <div class="modal-row"><label class="modal-label">고객명 *</label><input class="modal-input" id="card-name" placeholder="홍길동(공동명의)"/></div>
-      <div class="modal-row"><label class="modal-label">물건지</label><input class="modal-input" id="card-location" placeholder="서울 송파 아파트"/></div>
-      <div class="modal-row"><label class="modal-label">재직</label><input class="modal-input" id="card-job" placeholder="실사업자, 세입자후순위..."/></div>
-      <div class="modal-row"><label class="modal-label">심사결과</label>
-        <textarea class="modal-input modal-textarea" id="card-results" placeholder="금고명-결과&#10;금고명-★한도발생 2.5&#10;금고명-※검토중" style="height:90px"></textarea>
-      </div>
-      <div class="modal-row"><label class="modal-label">메모</label><input class="modal-input" id="card-memo" placeholder="추가 메모"/></div>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-cancel-btn" onclick="closeCardModal()">취소</button>
-      <button class="modal-save-btn" onclick="saveCard()">저장</button>
     </div>
   </div>
 </div>
@@ -474,13 +418,13 @@ import{getFirestore,collection,doc,onSnapshot,setDoc,addDoc,updateDoc,deleteDoc,
 // ═══════════════════════════
 // 🔧 Firebase 설정값
 // ═══════════════════════════
-const firebaseConfig = {
-  apiKey: "AIzaSyBi-FrJM5RB5nRc0nUz4OFVpqHrw29yY9Q",
-  authDomain: "loan-management-app-9df57.firebaseapp.com",
-  projectId: "loan-management-app-9df57",
-  storageBucket: "loan-management-app-9df57.firebasestorage.app",
-  messagingSenderId: "155998706391",
-  appId: "1:155998706391:web:4982fed24d32c99ad82e92"
+const firebaseConfig={
+  apiKey:"AIzaSyBi-FrJM5RB5nRc0nUz4OFVpqHrw29yY9Q",
+  authDomain:"loan-management-app-9df57.firebaseapp.com",
+  projectId:"loan-management-app-9df57",
+  storageBucket:"loan-management-app-9df57.firebasestorage.app",
+  messagingSenderId:"155998706391",
+  appId:"1:155998706391:web:4982fed24d32c99ad82e92"
 };
 // ═══════════════════════════
 
@@ -491,7 +435,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
 let currentUser=null,companies={},allLoans=[],loans=[],products=[],selectedCompany="",selectedProduct=null;
-let loansUnsub=null,statsUnsub=null,formData={},activeSido="",sharedTimers={};
+let loansUnsub=null,formData={},activeSido="",sharedTimers={};
 
 // 메인 탭
 document.querySelectorAll(".main-tab").forEach(btn=>{
@@ -545,18 +489,26 @@ function initData(){
     allLoans=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderCompanies();
   });
-  // 카드 시스템 초기화
+  // 지점접수현황 메모장
+  onSnapshot(doc(db,"shared","notice"),s=>{
+    if(s.exists()){const v=s.data().html||"";if($("notice-area")!==document.activeElement)$("notice-area").value=v;}
+  });
+  let noticeTimer=null;
+  $("notice-area").addEventListener("input",()=>{
+    clearTimeout(noticeTimer);
+    noticeTimer=setTimeout(async()=>{
+      await setDoc(doc(db,"shared","notice"),{html:$("notice-area").value,updatedBy:currentUser.email,updatedAt:new Date().toISOString()},{merge:true});
+    },800);
+  });
+  // 카드 시스템 초기화 (진행건)
   initCards();
   // 상품
   onSnapshot(collection(db,"products"),snap=>{
     products=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
     renderProductList();
   });
-  // 통계
-  const today=new Date().toISOString().slice(0,10);
-  $("stats-date").value=today;
-  loadStats(today);
-  $("stats-date").addEventListener("change",e=>loadStats(e.target.value));
+  // 통계 (주단위)
+  initWeeklyStats();
   // 버튼
   $("add-btn").addEventListener("click",addCustomer);
   $("add-input").addEventListener("keydown",e=>{if(e.key==="Enter")addCustomer();});
@@ -582,12 +534,8 @@ function initCards(){
     progressCards=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999));
     renderCards("progress");
   });
-  onSnapshot(collection(db,"notice_cards"),snap=>{
-    noticeCards=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999));
-    renderCards("notice");
-  });
-  $("progress-search").addEventListener("keydown",e=>{if(e.key==="Enter")renderCards("progress",$("progress-search").value);});
-  $("notice-search").addEventListener("keydown",e=>{if(e.key==="Enter")renderCards("notice",$("notice-search").value);});
+  const psEl=$("progress-search");
+  if(psEl) psEl.addEventListener("keydown",e=>{if(e.key==="Enter")renderCards("progress",psEl.value);});
 }
 
 function parseResults(text){
@@ -759,9 +707,10 @@ function renderCards(key, searchKw){
     if(kw){const first=el.querySelector(".search-match");if(first)first.scrollIntoView({block:"center"});}
     initCardDrag(el,"notice");
   }
+}
 
 let cardDragId=null, cardDragKey=null;
-}
+
 window.toggleCardGroup=(gid)=>{
   const body=document.getElementById("body-"+gid);
   const tog=document.getElementById("tog-"+gid);
@@ -879,35 +828,98 @@ window.saveProgressCard=async()=>{
 $("progress-modal").addEventListener("click",e=>{if(e.target===$("progress-modal"))closeProgressModal();});
 
 // 통계
-function loadStats(dateStr){
-  if(statsUnsub)statsUnsub();
-  statsUnsub=onSnapshot(doc(db,"stats",dateStr),snap=>{
-    if(!snap.exists()){
-      $("s-total").textContent="-";$("s-appr").textContent="-";$("s-rej").textContent="-";
-      $("stats-tbody").innerHTML="<tr><td colspan='6' class='stats-empty'>해당 날짜 데이터 없음</td></tr>";
-      return;
-    }
-    const d=snap.data();
-    const groups=d.groups||{},total=d.total||0;
-    const progReq=d.progress_req||{},approved=d.approved_groups||{},rejected=d.rejected_groups||{};
-    const totalAppr=Object.values(approved).reduce((a,b)=>a+b,0);
-    const totalRej=Object.values(rejected).reduce((a,b)=>a+b,0);
-    $("s-total").textContent=total;$("s-appr").textContent=totalAppr;$("s-rej").textContent=totalRej;
-    const active=Object.entries(groups).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
-    if(!active.length){$("stats-tbody").innerHTML="<tr><td colspan='6' class='stats-empty'>접수 없음</td></tr>";return;}
-    $("stats-tbody").innerHTML=active.map(([g,cnt])=>{
-      const req=progReq[g]||0,appr=approved[g]||0,rej=rejected[g]||0;
-      const pct=cnt>0?Math.round(appr/cnt*100):0;
-      return`<tr>
-        <td>${esc(g)}</td>
-        <td class="num">${cnt}</td>
-        <td class="num">${req}</td>
-        <td class="num" style="color:#4caf50">${appr}</td>
-        <td class="num" style="color:#ef5350">${rej}</td>
-        <td class="num">${pct?pct+"%":"-"}</td>
-      </tr>`;
-    }).join("");
+// 주간 통계
+let currentWeekStart=null;
+let weeklyUnsubs=[];
+
+function getWeekStart(date){
+  const d=new Date(date);
+  const day=d.getDay(); // 0=일,1=월,...,5=금,6=토
+  // 월요일 기준
+  const diff=day===0?-6:1-day;
+  d.setDate(d.getDate()+diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function formatDate(d){return d.toISOString().slice(0,10);}
+
+function initWeeklyStats(){
+  currentWeekStart=getWeekStart(new Date());
+  renderWeekLabel();
+  loadWeeklyStats();
+  $("stats-prev").addEventListener("click",()=>{
+    currentWeekStart.setDate(currentWeekStart.getDate()-7);
+    renderWeekLabel();loadWeeklyStats();
   });
+  $("stats-next").addEventListener("click",()=>{
+    currentWeekStart.setDate(currentWeekStart.getDate()+7);
+    renderWeekLabel();loadWeeklyStats();
+  });
+}
+
+function renderWeekLabel(){
+  const end=new Date(currentWeekStart);end.setDate(end.getDate()+4); // 월~금 (5일)
+  const fmt=d=>`${d.getMonth()+1}/${d.getDate()}`;
+  const days=["월","화","수","목","금"];
+  $("stats-week-label").textContent=`${fmt(currentWeekStart)}(월) ~ ${fmt(end)}(금)`;
+}
+
+function loadWeeklyStats(){
+  weeklyUnsubs.forEach(u=>u());weeklyUnsubs=[];
+  // 월~금 5일만
+  const dates=[];
+  for(let i=0;i<5;i++){
+    const d=new Date(currentWeekStart);d.setDate(d.getDate()+i);
+    dates.push(formatDate(d));
+  }
+
+  const weekData={};
+  dates.forEach(d=>weekData[d]=null);
+
+  const tryMerge=()=>{
+    if(Object.values(weekData).some(v=>v===null))return;
+    const total={total:0,groups:{},progress_req:{},approved_groups:{},rejected_groups:{}};
+    Object.values(weekData).forEach(d=>{
+      if(!d)return;
+      total.total+=(d.total||0);
+      Object.entries(d.groups||{}).forEach(([k,v])=>total.groups[k]=(total.groups[k]||0)+v);
+      Object.entries(d.progress_req||{}).forEach(([k,v])=>total.progress_req[k]=(total.progress_req[k]||0)+v);
+      Object.entries(d.approved_groups||{}).forEach(([k,v])=>total.approved_groups[k]=(total.approved_groups[k]||0)+v);
+      Object.entries(d.rejected_groups||{}).forEach(([k,v])=>total.rejected_groups[k]=(total.rejected_groups[k]||0)+v);
+    });
+    renderStats(total);
+  };
+
+  dates.forEach(dateStr=>{
+    const unsub=onSnapshot(doc(db,"stats",dateStr),snap=>{
+      weekData[dateStr]=snap.exists()?snap.data():{}; // null 대신 빈 객체
+      tryMerge();
+    });
+    weeklyUnsubs.push(unsub);
+  });
+}
+
+function renderStats(d){
+  const groups=d.groups||{},total=d.total||0;
+  const progReq=d.progress_req||{},approved=d.approved_groups||{},rejected=d.rejected_groups||{};
+  const totalAppr=Object.values(approved).reduce((a,b)=>a+b,0);
+  const totalRej=Object.values(rejected).reduce((a,b)=>a+b,0);
+  $("s-total").textContent=total;$("s-appr").textContent=totalAppr;$("s-rej").textContent=totalRej;
+  const active=Object.entries(groups).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  if(!active.length){$("stats-tbody").innerHTML="<tr><td colspan='6' class='stats-empty'>이번 주 접수 없음</td></tr>";return;}
+  $("stats-tbody").innerHTML=active.map(([g,cnt])=>{
+    const req=progReq[g]||0,appr=approved[g]||0,rej=rejected[g]||0;
+    const pct=cnt>0?Math.round(appr/cnt*100):0;
+    return`<tr>
+      <td>${esc(g)}</td>
+      <td class="num">${cnt}</td>
+      <td class="num">${req}</td>
+      <td class="num" style="color:#4caf50">${appr}</td>
+      <td class="num" style="color:#ef5350">${rej}</td>
+      <td class="num">${pct?pct+"%":"-"}</td>
+    </tr>`;
+  }).join("");
 }
 
 // 업체
@@ -932,8 +944,10 @@ function renderCompanies(){
 async function addCompany(){
   const name=$("c-name").value.trim(),tid=$("c-tid").value.trim();
   if(!name)return;
-  await setDoc(doc(db,"settings","telegram_ids"),{[name]:tid||"0"},{merge:true});
-  $("c-name").value="";$("c-tid").value="";
+  try{
+    await setDoc(doc(db,"settings","telegram_ids"),{[name]:tid||"0"},{merge:true});
+    $("c-name").value="";$("c-tid").value="";
+  }catch(e){console.error("업체 추가 실패:",e);alert("추가 실패: "+e.message);}
 }
 
 function selectCompany(name){
@@ -954,21 +968,22 @@ function renderLoans(){
   const list=kw?loans.filter(l=>(l.customer||"").toLowerCase().includes(kw)||(l.status||"").toLowerCase().includes(kw)||(l.details||"").toLowerCase().includes(kw)):loans;
   $("loan-list").innerHTML=list.map(loan=>`
     <div class="loan-item" draggable="true" data-id="${loan.id}">
-      <div class="loan-header">
-        <div class="customer-info">
-          <div class="customer-name">${esc(loan.customer||"")}</div>
-          ${loan.status&&loan.status!=="-"?`<div class="customer-status">${esc(loan.status)}</div>`:""}
+      <div class="loan-view">
+        <div class="loan-header">
+          <div class="customer-info">
+            <div class="customer-name">${esc(loan.customer||"")}</div>
+            ${loan.status&&loan.status!=="-"?`<div class="customer-status">${esc(loan.status)}</div>`:""}
+          </div>
+          <div class="loan-actions">
+            <button class="del-btn" data-id="${loan.id}">✕</button>
+          </div>
         </div>
-        <div class="loan-actions">
-          <button class="edit-btn" data-id="${loan.id}">수정</button>
-          <button class="del-btn" data-id="${loan.id}">삭제</button>
-        </div>
+        ${loan.details?`<div class="loan-details">${esc(loan.details)}</div>`:""}
       </div>
-      ${loan.details?`<div class="loan-details">${esc(loan.details)}</div>`:""}
       <div class="edit-form hidden" id="ef-${loan.id}">
         <input class="edit-input" id="ec-${loan.id}" placeholder="고객명" value="${esc(loan.customer||"")}"/>
         <input class="edit-input" id="es-${loan.id}" placeholder="상태" value="${esc(loan.status||"")}"/>
-        <textarea class="edit-textarea" id="ed-${loan.id}" rows="3">${esc(loan.details||"")}</textarea>
+        <textarea class="edit-textarea" id="ed-${loan.id}" rows="${Math.max(3,(loan.details||"").split("\n").length+1)}">${esc(loan.details||"")}</textarea>
         <div class="edit-actions">
           <button class="save-btn" data-id="${loan.id}">저장</button>
           <button class="cancel-btn">취소</button>
@@ -977,16 +992,22 @@ function renderLoans(){
     </div>
   `).join("")||"<div style='color:#3a4060;padding:16px;text-align:center;font-size:12px'>고객이 없습니다</div>";
 
-  $("loan-list").querySelectorAll(".edit-btn").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      const id=btn.dataset.id,item=btn.closest(".loan-item");
-      item.querySelector(".customer-info").style.display="none";
-      const det=item.querySelector(".loan-details");if(det)det.style.display="none";
-      item.querySelector(".loan-actions").style.display="none";
+  // 뷰 클릭 → 인라인 편집
+  $("loan-list").querySelectorAll(".loan-view").forEach(view=>{
+    view.addEventListener("click",e=>{
+      if(e.target.closest(".del-btn"))return;
+      const item=view.closest(".loan-item");
+      const id=item.dataset.id;
+      view.classList.add("hidden");
       $("ef-"+id).classList.remove("hidden");
+      $("ec-"+id).focus();
     });
   });
-  $("loan-list").querySelectorAll(".cancel-btn").forEach(btn=>btn.addEventListener("click",renderLoans));
+  $("loan-list").querySelectorAll(".cancel-btn").forEach(btn=>btn.addEventListener("click",e=>{
+    const item=btn.closest(".loan-item");
+    item.querySelector(".loan-view").classList.remove("hidden");
+    item.querySelector(".edit-form").classList.add("hidden");
+  }));
   $("loan-list").querySelectorAll(".save-btn").forEach(btn=>{
     btn.addEventListener("click",async()=>{
       const id=btn.dataset.id;
@@ -994,7 +1015,11 @@ function renderLoans(){
     });
   });
   $("loan-list").querySelectorAll(".del-btn").forEach(btn=>{
-    btn.addEventListener("click",async()=>{if(!confirm("삭제할까요?"))return;await deleteDoc(doc(db,"loans",btn.dataset.id));});
+    btn.addEventListener("click",async e=>{
+      e.stopPropagation();
+      if(!confirm("삭제할까요?"))return;
+      await deleteDoc(doc(db,"loans",btn.dataset.id));
+    });
   });
   initDrag();
 }
@@ -1020,9 +1045,11 @@ function initDrag(){
 async function addCustomer(){
   const inp=$("add-input"),name=inp.value.trim();
   if(!name||!selectedCompany)return;
-  const ref=doc(collection(db,"loans"));
-  await setDoc(ref,{customer:name,status:"-",details:"",company:selectedCompany,order:loans.length,id:ref.id});
-  inp.value="";
+  try{
+    const ref=doc(collection(db,"loans"));
+    await setDoc(ref,{customer:name,status:"-",details:"",company:selectedCompany,order:loans.length,id:ref.id});
+    inp.value="";
+  }catch(e){console.error("고객 추가 실패:",e);alert("추가 실패: "+e.message);}
 }
 
 async function shareToTelegram(){
@@ -1188,52 +1215,67 @@ function renderForm(id){
   });
 }
 
-// =====================
-// 지점접수 메모장 기능
-// =====================
-function initNoticeMemo(){
-  const ref = doc(db, "shared", "notice");
-
-  // 🔹 실시간 불러오기
-  onSnapshot(ref, snap=>{
-    if(snap.exists()){
-      document.getElementById("notice-area").value = snap.data().text || "";
-    }
-  });
-
-  // 🔹 입력하면 자동 저장
-  let timer;
-  document.getElementById("notice-area").addEventListener("input", ()=>{
-    clearTimeout(timer);
-    timer = setTimeout(async ()=>{
-      await setDoc(ref, {
-        text: document.getElementById("notice-area").value,
-        updatedAt: new Date().toISOString()
-      });
-    }, 500);
-  });
-
-  // 🔹 검색 기능 (고객명)
-  document.getElementById("notice-search").addEventListener("keydown", e=>{
-    if(e.key === "Enter"){
-      const keyword = document.getElementById("notice-search").value.trim().toLowerCase();
-      const textarea = document.getElementById("notice-area");
-      const text = textarea.value.toLowerCase();
-
-      const index = text.indexOf(keyword);
-
-      if(index >= 0){
-        textarea.focus();
-        textarea.setSelectionRange(index, index + keyword.length);
-      }else{
-        alert("검색 결과 없음");
-      }
-    }
-  });
-}
-initNoticeMemo();
 function renderGuGrid(){return(REGIONS[activeSido]||[]).map(gu=>{const k=`${activeSido} ${gu}`,on=formData.regions.includes(k);return`<label class="gu-label${on?" on":""}" data-gu="${gu}"><input type="checkbox" ${on?"checked":""}> ${esc(gu)}</label>`;}).join("");}
 function bindGuEvents(){$("gu-grid").querySelectorAll(".gu-label").forEach(el=>{el.addEventListener("click",e=>{const gu=el.dataset.gu,k=`${activeSido} ${gu}`,cb=el.querySelector("input");if(e.target!==cb)cb.checked=!cb.checked;if(cb.checked){if(!formData.regions.includes(k))formData.regions.push(k);}else formData.regions=formData.regions.filter(r=>r!==k);el.classList.toggle("on",cb.checked);});});}
 </script>
+<!-- 진행건 모달 -->
+<div id="progress-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="progress-modal-title">진행건 추가</span>
+      <button class="modal-close" onclick="closeProgressModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row"><label class="modal-label">이름 *</label><input class="modal-input" id="p-name" placeholder="홍길동"/></div>
+      <div class="modal-row"><label class="modal-label">금액</label><input class="modal-input" id="p-amount" placeholder="2.5억, 3000만원"/></div>
+      <div class="modal-row"><label class="modal-label">금고명</label><input class="modal-input" id="p-bank" placeholder="북서울금고"/></div>
+      <div class="modal-row"><label class="modal-label">날짜</label><input class="modal-input" id="p-date" placeholder="4월 1일(수) 14시"/></div>
+      <div class="modal-row"><label class="modal-label">상태</label>
+        <select class="modal-select" id="p-status">
+          <option value="자서예정">자서예정</option>
+          <option value="자서미정">자서미정</option>
+          <option value="브릿지예정">브릿지예정</option>
+          <option value="브릿지미정">브릿지미정</option>
+          <option value="브릿지확인필요">브릿지확인필요</option>
+          <option value="당일기표예정">당일기표예정</option>
+          <option value="기표예정">기표예정</option>
+          <option value="기표미정">기표미정</option>
+          <option value="완료">완료</option>
+        </select>
+      </div>
+      <div class="modal-row"><label class="modal-label">메모</label><textarea class="modal-input modal-textarea" id="p-memo" placeholder="추가 메모..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel-btn" onclick="closeProgressModal()">취소</button>
+      <button class="modal-save-btn" onclick="saveProgressCard()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 지점접수현황 모달 -->
+<div id="card-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">접수 추가</span>
+      <button class="modal-close" onclick="closeCardModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row"><label class="modal-label">거래처 *</label><input class="modal-input" id="card-branch" placeholder="아이덴, 결초, 박팀..."/></div>
+      <div class="modal-row"><label class="modal-label">날짜</label><input class="modal-input" id="card-date" placeholder="03.31"/></div>
+      <div class="modal-row"><label class="modal-label">고객명 *</label><input class="modal-input" id="card-name" placeholder="홍길동(공동명의)"/></div>
+      <div class="modal-row"><label class="modal-label">물건지</label><input class="modal-input" id="card-location" placeholder="서울 송파 아파트"/></div>
+      <div class="modal-row"><label class="modal-label">재직</label><input class="modal-input" id="card-job" placeholder="실사업자, 세입자후순위..."/></div>
+      <div class="modal-row"><label class="modal-label">심사결과</label>
+        <textarea class="modal-input modal-textarea" id="card-results" placeholder="금고명-결과&#10;금고명-★한도발생 2.5&#10;금고명-※검토중" style="height:90px"></textarea>
+      </div>
+      <div class="modal-row"><label class="modal-label">메모</label><input class="modal-input" id="card-memo" placeholder="추가 메모"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel-btn" onclick="closeCardModal()">취소</button>
+      <button class="modal-save-btn" onclick="saveCard()">저장</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

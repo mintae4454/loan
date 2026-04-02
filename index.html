@@ -237,7 +237,7 @@ input,textarea,select,button{font-family:inherit}
 .tag{display:inline-block;border-radius:3px;padding:1px 6px;font-size:10px;margin:2px;background:#252840;color:#7c9ef8}
 .tag.green{background:#1a2e1a;color:#4caf50}
 .tag.red{background:#2e1a1a;color:#ef5350}
-.d-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:9px;width:35%;}
+.d-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:9px;width:25%;}
 
 /* ═══════════════════════════════
    통계
@@ -427,7 +427,6 @@ td.editing{background:#0a0e1a}
 
   <header class="app-header">
     <div class="app-header-left">
-      <button class="hamburger-btn" id="hamburger-btn">☰</button>
       <span style="font-size:18px">🏦</span><span class="app-title">대출 관리 시스템</span>
     </div>
     <div class="app-header-right"><span class="user-email" id="user-email"></span><button class="logout-btn" id="logout-btn">로그아웃</button></div>
@@ -444,6 +443,7 @@ td.editing{background:#0a0e1a}
   <div id="tab-loan" class="tab-panel" style="flex-direction:column">
     <!-- 모바일 내부 탭 -->
     <div class="loan-inner-tabs" id="loan-inner-tabs">
+	<button class="hamburger-btn" id="hamburger-btn">☰</button>
       <button class="loan-inner-tab active" data-panel="col-loans">📁 진행현황</button>
       <button class="loan-inner-tab" data-panel="col-progress">📌 진행건</button>
       <button class="loan-inner-tab" data-panel="col-notice">📋 지점접수현황</button>
@@ -470,7 +470,7 @@ td.editing{background:#0a0e1a}
         <div class="loan-list-header">
           <span class="loan-title" id="loan-title">업체 선택</span>
           <input class="search-input" id="search-input" placeholder="🔍 전체 고객명 검색"/>
-          <button class="share-btn hidden" id="share-btn">📤</button>
+          <button class="share-btn hidden" id="share-btn">📤텔레그램 전송</button>
         </div>
         <div class="loan-list" id="loan-list"></div>
         <div class="add-customer-row hidden" id="add-row">
@@ -1731,27 +1731,62 @@ async function shareToTelegram(){
 }
 
 // 상품관리
+// 단축명 → 정식명
 const SIDO_ALIAS={"서울":"서울특별시","경기":"경기도","인천":"인천광역시","부산":"부산광역시","대구":"대구광역시","광주":"광주광역시","대전":"대전광역시","울산":"울산광역시","세종":"세종특별자치시","강원":"강원특별자치도","충북":"충청북도","충남":"충청남도","전북":"전라북도","전남":"전라남도","경북":"경상북도","경남":"경상남도","제주":"제주특별자치도"};
+// 정식명 → 단축명 (역방향)
+const SIDO_FULL2SHORT=Object.fromEntries(Object.entries(SIDO_ALIAS).map(([s,f])=>[f,s]));
+// 단축명 목록 (시도 버튼용)
+const SIDO_SHORT_LIST=Object.keys(SIDO_ALIAS);
+
 const REGIONS={"서울특별시":["강남구","강동구","강북구","강서구","관악구","광진구","구로구","금천구","노원구","도봉구","동대문구","동작구","마포구","서대문구","서초구","성동구","성북구","송파구","양천구","영등포구","용산구","은평구","종로구","중구","중랑구"],"경기도":["가평군","고양시","과천시","광명시","광주시","구리시","군포시","김포시","남양주시","동두천시","부천시","성남시","수원시","시흥시","안산시","안성시","안양시","양주시","양평군","여주시","연천군","오산시","용인시","의왕시","의정부시","이천시","파주시","평택시","포천시","하남시","화성시"],"인천광역시":["강화군","계양구","남동구","동구","미추홀구","부평구","서구","연수구","옹진군","중구"],"부산광역시":["강서구","금정구","기장군","남구","동구","동래구","부산진구","북구","사상구","사하구","서구","수영구","연제구","영도구","중구","해운대구"],"대구광역시":["달서구","달성군","동구","북구","서구","수성구","중구","남구"],"광주광역시":["광산구","남구","동구","북구","서구"],"대전광역시":["대덕구","동구","서구","유성구","중구"],"울산광역시":["남구","동구","북구","울주군","중구"],"세종특별자치시":["세종시"],"강원특별자치도":["강릉시","고성군","동해시","삼척시","속초시","양구군","양양군","영월군","원주시","인제군","정선군","철원군","춘천시","태백시","평창군","홍천군","화천군","횡성군"],"충청북도":["괴산군","단양군","보은군","영동군","옥천군","음성군","제천시","증평군","진천군","청주시","충주시"],"충청남도":["계룡시","공주시","금산군","논산시","당진시","보령시","부여군","서산시","서천군","아산시","예산군","천안시","청양군","태안군","홍성군"],"전라북도":["고창군","군산시","김제시","남원시","무주군","부안군","순창군","완주군","익산시","임실군","장수군","전주시","정읍시","진안군"],"전라남도":["강진군","고흥군","곡성군","광양시","구례군","나주시","담양군","목포시","무안군","보성군","순천시","신안군","여수시","영광군","영암군","완도군","장성군","장흥군","진도군","함평군","해남군","화순군"],"경상북도":["경산시","경주시","고령군","구미시","군위군","김천시","문경시","봉화군","상주시","성주군","안동시","영덕군","영양군","영주시","영천시","예천군","울릉군","울진군","의성군","청도군","청송군","칠곡군","포항시"],"경상남도":["거제시","거창군","고성군","김해시","남해군","밀양시","사천시","산청군","양산시","의령군","진주시","창녕군","창원시","통영시","하동군","함안군","함양군","합천군"],"제주특별자치도":["서귀포시","제주시"]};
 
-function getSearchText(p){
-  const regions=[...(p.regions||[])];
-  (p.regions||[]).forEach(r=>{
-    Object.entries(REGIONS).forEach(([sido,cities])=>{if(r.includes("전체")&&r.includes(sido))regions.push(...cities);});
-    Object.entries(SIDO_ALIAS).forEach(([alias,full])=>{if(r.includes(full))regions.push(alias);});
-  });
-  return[p.name,p.product,...regions,...(p.building_types||[]),p.ltv,p.rate,p.junior_rank,p.junior_note,p.individual,p.business,p.memo,p.seonmalso?"선말소":"",p.tenant?"세입자":"",p.eviction_fund?"퇴거":"",p.mci?"MCI":""].join(" ").toLowerCase();
+// regions 값을 단축명으로 정규화 (저장/표시 통일)
+function normalizeRegion(r){
+  const s=String(r||"").trim();
+  // 정식명이면 단축명으로
+  if(SIDO_FULL2SHORT[s]) return SIDO_FULL2SHORT[s];
+  // "서울특별시 강남구" 같은 형태도 처리
+  for(const [full,short] of Object.entries(SIDO_FULL2SHORT)){
+    if(s.startsWith(full)) return s.replace(full,short);
+  }
+  return s;
 }
 
+// 검색텍스트 생성 (단축명+정식명 모두 포함)
+function getSearchText(p){
+  const rawRegions=p.regions||[];
+  const normalized=rawRegions.map(normalizeRegion);
+  // 단축명→정식명도 추가해 양방향 검색
+  const expanded=[...normalized];
+  normalized.forEach(r=>{
+    if(SIDO_ALIAS[r]) expanded.push(SIDO_ALIAS[r]); // 단→정
+    if(SIDO_FULL2SHORT[r]) expanded.push(SIDO_FULL2SHORT[r]); // 정→단
+    // "전국" 있으면 모든 시도 추가
+    if(r==="전국") SIDO_SHORT_LIST.forEach(s=>expanded.push(s));
+  });
+  return[p.name,p.product,...expanded,...(p.building_types||[]),p.ltv,p.rate,p.junior_rank,p.junior_note,p.individual,p.business,p.memo,p.seonmalso?"선말소":"",p.tenant?"세입자":"",p.eviction_fund?"퇴거":"",p.mci?"MCI":""].join(" ").toLowerCase();
+}
+
+// 검색 실행 — 입력값 자체도 정규화
 function renderProductList(){
-  const kws=$("product-search").value.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
-  const filtered=kws.length?products.filter(p=>{const t=getSearchText(p);return kws.every(k=>t.includes(k)||(SIDO_ALIAS[k]&&t.includes(SIDO_ALIAS[k].toLowerCase())));}):products;
+  const raw=$("product-search").value.trim().toLowerCase();
+  const kws=raw.split(/[\s,]+/).filter(Boolean);
+  const filtered=kws.length?products.filter(p=>{
+    const t=getSearchText(p);
+    return kws.every(k=>{
+      const normK=normalizeRegion(k).toLowerCase();
+      const fullK=(SIDO_ALIAS[k]||"").toLowerCase();
+      const shortK=(SIDO_FULL2SHORT[k]||"").toLowerCase();
+      return t.includes(k)||t.includes(normK)||(fullK&&t.includes(fullK))||(shortK&&t.includes(shortK));
+    });
+  }):products;
   $("product-count").textContent=filtered.length+"개";
   $("product-list").innerHTML=filtered.map(p=>{
     const stopped=(p.product||"").includes("[중단]");
+    const dispRegions=(p.regions||[]).map(normalizeRegion);
     return`<div class="product-item${selectedProduct?.id===p.id?" active":""}" data-id="${p.id}">
       <div class="product-name-row">${stopped?`<span class='stop-dot'>●</span>`:""}<span style="color:${stopped?"#ef5350":"#e8eaf0"}">${esc(p.name)}</span></div>
-      <div class="product-sub">${(p.regions||[]).slice(0,2).map(r=>esc(r)).join(", ")}${(p.regions||[]).length>2?"...":""}</div>
+      <div class="product-sub">${dispRegions.slice(0,3).map(r=>esc(r)).join(", ")}${dispRegions.length>3?"...":""}</div>
     </div>`;
   }).join("")||"<div style='color:#3a4060;padding:20px;text-align:center;font-size:12px'>검색 결과 없음</div>";
   $("product-list").querySelectorAll(".product-item").forEach(el=>{
@@ -1772,7 +1807,7 @@ function renderProductDetail(p){
       <button class="detail-del-btn" data-id="${p.id}">🗑 삭제</button>
     </div>
     <hr class="detail-sep"/>
-    ${(p.regions||[]).length?`<div class="d-field"><div class="d-label">가능 지역</div><div class="d-region">${p.regions.map(r=>esc(r)).join(", ")}</div></div>`:""}
+    ${(p.regions||[]).length?`<div class="d-field"><div class="d-label">가능 지역</div><div class="d-region">${p.regions.map(r=>esc(normalizeRegion(r))).join(", ")}</div></div>`:""}
     ${(p.building_types||[]).length?`<div class="d-field"><div class="d-label">건물 유형</div><div>${p.building_types.map(b=>tag(b)).join("")}</div></div>`:""}
     <div class="d-grid">
       ${p.ltv?`<div class="d-field"><div class="d-label">LTV</div><div class="d-val">${esc(p.ltv)}</div></div>`:""}
@@ -1823,7 +1858,10 @@ function renderForm(id){
       <div class="f-section">
         <div class="f-section-title">가능 지역</div>
         <div class="region-wrap">
-          <div class="sido-list" id="sido-list">${Object.keys(REGIONS).map(s=>`<button class="sido-btn${s===activeSido?" active":""}" data-sido="${s}">${s}</button>`).join("")}</div>
+          <div class="sido-list" id="sido-list">
+            <button class="sido-btn${activeSido==="전국"?" active":""}" data-sido="전국" style="color:${formData.regions.includes("전국")?"#4caf50":""}">🌐 전국</button>
+            ${SIDO_SHORT_LIST.map(s=>`<button class="sido-btn${s===activeSido?" active":""}" data-sido="${s}">${s}</button>`).join("")}
+          </div>
           <div class="gu-wrap">
             <div class="gu-ctrl"><span class="gu-ctrl-title" id="gu-title">${activeSido}</span><button class="small-btn" id="gu-all">전체선택</button><button class="small-btn gray" id="gu-none">전체해제</button></div>
             <div class="gu-grid" id="gu-grid">${renderGuGrid()}</div>
@@ -1861,12 +1899,39 @@ function renderForm(id){
     btn.addEventListener("click",()=>{
       activeSido=btn.dataset.sido;
       $("sido-list").querySelectorAll(".sido-btn").forEach(b=>b.classList.remove("active"));
-      btn.classList.add("active");$("gu-title").textContent=activeSido;
-      $("gu-grid").innerHTML=renderGuGrid();bindGuEvents();
+      btn.classList.add("active");
+      $("gu-title").textContent=activeSido==="전국"?"전국 (전체 적용)":activeSido;
+      $("gu-grid").innerHTML=renderGuGrid();
+      bindGuEvents();
     });
   });
-  $("gu-all").addEventListener("click",()=>{REGIONS[activeSido].forEach(gu=>{const k=`${activeSido} ${gu}`;if(!formData.regions.includes(k))formData.regions.push(k);});$("gu-grid").innerHTML=renderGuGrid();bindGuEvents();});
-  $("gu-none").addEventListener("click",()=>{formData.regions=formData.regions.filter(r=>!r.startsWith(activeSido));$("gu-grid").innerHTML=renderGuGrid();bindGuEvents();});
+  $("gu-all").addEventListener("click",()=>{
+    if(activeSido==="전국"){
+      if(!formData.regions.includes("전국")) formData.regions.push("전국");
+      // 전국 선택 시 다른 지역 중복 제거
+      formData.regions=["전국"];
+    } else {
+      const fullSido=SIDO_ALIAS[activeSido]||activeSido;
+      (REGIONS[fullSido]||REGIONS[activeSido]||[]).forEach(gu=>{
+        const k=`${activeSido} ${gu}`;
+        if(!formData.regions.includes(k)) formData.regions.push(k);
+      });
+    }
+    $("gu-grid").innerHTML=renderGuGrid();bindGuEvents();
+    // 전국 버튼 색상 갱신
+    const jBtn=$("sido-list").querySelector('[data-sido="전국"]');
+    if(jBtn) jBtn.style.color=formData.regions.includes("전국")?"#4caf50":"";
+  });
+  $("gu-none").addEventListener("click",()=>{
+    if(activeSido==="전국"){
+      formData.regions=formData.regions.filter(r=>r!=="전국");
+    } else {
+      formData.regions=formData.regions.filter(r=>!r.startsWith(activeSido));
+    }
+    $("gu-grid").innerHTML=renderGuGrid();bindGuEvents();
+    const jBtn=$("sido-list").querySelector('[data-sido="전국"]');
+    if(jBtn) jBtn.style.color=formData.regions.includes("전국")?"#4caf50":"";
+  });
   bindGuEvents();
   $("bldg-wrap").querySelectorAll(".cb-wrap").forEach(el=>{
     el.addEventListener("click",e=>{const b=el.dataset.bldg,cb=el.querySelector("input");if(e.target!==cb)cb.checked=!cb.checked;if(cb.checked){if(!formData.building_types.includes(b))formData.building_types.push(b);}else formData.building_types=formData.building_types.filter(x=>x!==b);el.classList.toggle("on",cb.checked);});
@@ -1876,15 +1941,60 @@ function renderForm(id){
   });
   $("f-cancel").addEventListener("click",()=>{$("product-form-view").classList.add("hidden");$("product-main-view").style.display="flex";});
   $("f-save").addEventListener("click",async()=>{
-    const data={...formData,name:$("f-name").value.trim(),product:$("f-product").value.trim(),ltv:$("f-ltv").value.trim(),rate:$("f-rate").value.trim(),junior_rank:$("f-jr").value,junior_note:$("f-jn").value.trim(),individual:$("f-individual").value.trim(),business:$("f-business").value.trim(),purpose:$("f-purpose").value.trim(),memo:$("f-memo").value.trim()};
+    const data={...formData,
+      name:$("f-name").value.trim(),
+      product:$("f-product").value.trim(),
+      ltv:$("f-ltv").value.trim(),
+      rate:$("f-rate").value.trim(),
+      junior_rank:$("f-jr").value,
+      junior_note:$("f-jn").value.trim(),
+      individual:$("f-individual").value.trim(),
+      business:$("f-business").value.trim(),
+      purpose:$("f-purpose").value.trim(),
+      memo:$("f-memo").value.trim(),
+      // 저장 시 지역을 단축명으로 정규화
+      regions:(formData.regions||[]).map(normalizeRegion)
+    };
     if(!data.name){alert("지점명을 입력하세요");return;}
     if(id)await updateDoc(doc(db,"products",id),data);else await addDoc(collection(db,"products"),data);
     $("product-form-view").classList.add("hidden");$("product-main-view").style.display="flex";
   });
 }
 
-function renderGuGrid(){return(REGIONS[activeSido]||[]).map(gu=>{const k=`${activeSido} ${gu}`,on=formData.regions.includes(k);return`<label class="gu-label${on?" on":""}" data-gu="${gu}"><input type="checkbox" ${on?"checked":""}> ${esc(gu)}</label>`;}).join("");}
-function bindGuEvents(){$("gu-grid").querySelectorAll(".gu-label").forEach(el=>{el.addEventListener("click",e=>{const gu=el.dataset.gu,k=`${activeSido} ${gu}`,cb=el.querySelector("input");if(e.target!==cb)cb.checked=!cb.checked;if(cb.checked){if(!formData.regions.includes(k))formData.regions.push(k);}else formData.regions=formData.regions.filter(r=>r!==k);el.classList.toggle("on",cb.checked);});});}
+function renderGuGrid(){
+  if(activeSido==="전국"){
+    const on=formData.regions.includes("전국");
+    return`<label class="gu-label${on?" on":""}" data-gu="__전국__" style="grid-column:1/-1;font-size:13px;padding:8px 4px">
+      <input type="checkbox" ${on?"checked":""}> 전국 전체 선택
+    </label>`;
+  }
+  const fullSido=SIDO_ALIAS[activeSido]||activeSido;
+  return(REGIONS[fullSido]||REGIONS[activeSido]||[]).map(gu=>{
+    const k=`${activeSido} ${gu}`,on=formData.regions.includes(k)||formData.regions.includes("전국");
+    return`<label class="gu-label${on?" on":""}" data-gu="${gu}"><input type="checkbox" ${on?"checked":""}> ${esc(gu)}</label>`;
+  }).join("");
+}
+function bindGuEvents(){
+  $("gu-grid").querySelectorAll(".gu-label").forEach(el=>{
+    el.addEventListener("click",e=>{
+      const gu=el.dataset.gu,cb=el.querySelector("input");
+      if(e.target!==cb) cb.checked=!cb.checked;
+      if(gu==="__전국__"){
+        // 전국 체크박스
+        if(cb.checked){ formData.regions=["전국"]; }
+        else { formData.regions=formData.regions.filter(r=>r!=="전국"); }
+        $("gu-grid").innerHTML=renderGuGrid();bindGuEvents();
+        const jBtn=$("sido-list").querySelector('[data-sido="전국"]');
+        if(jBtn) jBtn.style.color=formData.regions.includes("전국")?"#4caf50":"";
+      } else {
+        const k=`${activeSido} ${gu}`;
+        if(cb.checked){ if(!formData.regions.includes(k)) formData.regions.push(k); }
+        else { formData.regions=formData.regions.filter(r=>r!==k); }
+        el.classList.toggle("on",cb.checked);
+      }
+    });
+  });
+}
 
 // ═══════════════════════════════════════════
 // DSR 계산기

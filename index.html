@@ -243,7 +243,10 @@ input,textarea,select,button{font-family:inherit}
    통계
 ═══════════════════════════════ */
 .stats-layout{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-.stats-top{display:flex;align-items:center;gap:10px; margin:0 auto;}
+.stats-top{display:flex;align-items:center;gap:10px; margin:0 auto;flex-wrap:wrap;justify-content:center}
+.stats-mode-toggle{display:flex;background:#1a1d2e;border:1px solid #2a2d3e;border-radius:6px;overflow:hidden;flex-shrink:0}
+.stats-mode-btn{background:none;border:none;color:#6b7db3;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.stats-mode-btn.active{background:#4f6ef7;color:white}
 .stats-date-input{background:#1a1d2e;border:1px solid #2a2d3e;border-radius:5px;padding:6px 10px;color:#e8eaf0;font-size:12px;outline:none}
 .stats-date-input:focus{border-color:#4f6ef7}
 .stats-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px; width:50%; margin:0 auto;}
@@ -257,6 +260,50 @@ input,textarea,select,button{font-family:inherit}
 .stats-table tr:last-child td{border-bottom:none}
 .num{text-align:left;font-weight:600}
 .stats-empty{color:#3a4060;text-align:center;padding:30px;font-size:13px}
+
+/* ═══════════════════════════════
+   DSR 계산기
+═══════════════════════════════ */
+.dsr-layout{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;align-items:center}
+.dsr-wrap{width:100%;max-width:680px;display:flex;flex-direction:column;gap:14px}
+.dsr-section{background:#1a1d2e;border:1px solid #2a2d3e;border-radius:8px;padding:14px 16px}
+.dsr-section-title{color:#7c9ef8;font-weight:700;font-size:12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.dsr-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.dsr-label{color:#9aa5c4;font-size:12px;min-width:110px;flex-shrink:0}
+.dsr-input{flex:1;background:#0f1117;border:1px solid #2a2d3e;border-radius:5px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;text-align:right}
+.dsr-input:focus{border-color:#4f6ef7}
+.dsr-unit{color:#6b7db3;font-size:12px;flex-shrink:0;min-width:28px}
+.dsr-select{flex:1;background:#0f1117;border:1px solid #2a2d3e;border-radius:5px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none}
+.dsr-loan-item{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;padding:10px 12px;margin-bottom:8px;position:relative}
+.dsr-loan-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.dsr-loan-badge{background:#252840;color:#7c9ef8;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700}
+.dsr-loan-del{position:absolute;top:8px;right:8px;background:#2e1a1a;color:#ef5350;border:none;border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer}
+.dsr-add-btn{width:100%;background:#252840;color:#7c9ef8;border:1px dashed #3a4060;border-radius:5px;padding:8px;font-size:12px;cursor:pointer;font-weight:700;transition:all .15s}
+.dsr-add-btn:hover{background:#2a2d3e;border-color:#4f6ef7}
+.dsr-result{background:linear-gradient(135deg,#1a2240,#1a1d2e);border:1px solid #3a4a7a;border-radius:8px;padding:16px}
+.dsr-result-title{color:#9aa5c4;font-size:11px;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.dsr-result-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.dsr-result-item{text-align:center}
+.dsr-result-val{font-size:22px;font-weight:700;color:#7c9ef8}
+.dsr-result-val.ok{color:#4caf50}
+.dsr-result-val.warn{color:#f8c84a}
+.dsr-result-val.over{color:#ef5350}
+.dsr-result-lbl{font-size:10px;color:#6b7db3;margin-top:3px}
+.dsr-result-bar-wrap{background:#0f1117;border-radius:4px;height:8px;margin-bottom:10px;overflow:hidden}
+.dsr-result-bar{height:100%;border-radius:4px;transition:width .4s ease;background:linear-gradient(90deg,#4f6ef7,#7c3aed)}
+.dsr-result-bar.warn{background:linear-gradient(90deg,#f8c84a,#f8964a)}
+.dsr-result-bar.over{background:linear-gradient(90deg,#ef5350,#b71c1c)}
+.dsr-result-desc{color:#9aa5c4;font-size:12px;line-height:1.6}
+.dsr-calc-btn{width:100%;background:linear-gradient(135deg,#4f6ef7,#7c3aed);color:white;border:none;border-radius:7px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.dsr-calc-btn:hover{opacity:.9}
+.dsr-reset-btn{background:#2a2d3e;color:#9aa5c4;border:none;border-radius:5px;padding:6px 14px;font-size:12px;cursor:pointer}
+.dsr-inline-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:700px){
+  .dsr-result-grid{grid-template-columns:1fr 1fr}
+  .dsr-inline-row{grid-template-columns:1fr}
+  .stats-cards{width:100%}
+  .stats-table-wrap{width:100%}
+}
 
 /* 상품 폼 */
 .form-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
@@ -329,6 +376,7 @@ input,textarea,select,button{font-family:inherit}
     <button class="main-tab active" data-tab="loan">📁 진행현황</button>
     <button class="main-tab" data-tab="product">🏦 상품관리</button>
     <button class="main-tab" data-tab="stats">📊 통계</button>
+    <button class="main-tab" data-tab="dsr">🧮 DSR 계산기</button>
   </div>
 
   <!-- ══ 진행현황: 4분할 ══ -->
@@ -439,10 +487,22 @@ input,textarea,select,button{font-family:inherit}
   <div id="tab-stats" class="tab-panel hidden">
     <div class="stats-layout">
       <div class="stats-top">
-        <span style="color:#9aa5c4;font-size:13px;font-weight:600">📅 주간 통계</span>
-        <button id="stats-prev" style="background:#2a2d3e;color:#9aa5c4;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px">◀</button>
-        <span id="stats-week-label" style="color:#e8eaf0;font-size:12px;font-weight:600;min-width:160px;text-align:center"></span>
-        <button id="stats-next" style="background:#2a2d3e;color:#9aa5c4;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px">▶</button>
+        <div class="stats-mode-toggle">
+          <button class="stats-mode-btn active" id="stats-mode-weekly">주간</button>
+          <button class="stats-mode-btn" id="stats-mode-daily">일별</button>
+        </div>
+        <!-- 주간 컨트롤 -->
+        <div id="stats-weekly-ctrl" style="display:flex;align-items:center;gap:10px">
+          <button id="stats-prev" style="background:#2a2d3e;color:#9aa5c4;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px">◀</button>
+          <span id="stats-week-label" style="color:#e8eaf0;font-size:12px;font-weight:600;min-width:160px;text-align:center"></span>
+          <button id="stats-next" style="background:#2a2d3e;color:#9aa5c4;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px">▶</button>
+        </div>
+        <!-- 일별 컨트롤 -->
+        <div id="stats-daily-ctrl" style="display:none;align-items:center;gap:10px">
+          <button id="stats-day-prev" style="background:#2a2d3e;color:#9aa5c4;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px">◀</button>
+          <span id="stats-day-label" style="color:#e8eaf0;font-size:12px;font-weight:600;min-width:120px;text-align:center"></span>
+          <button id="stats-day-next" style="background:#2a2d3e;color:#9aa5c4;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px">▶</button>
+        </div>
       </div>
       <div class="stats-cards">
         <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-lbl">총 접수</div></div>
@@ -452,12 +512,122 @@ input,textarea,select,button{font-family:inherit}
       <div class="stats-table-wrap">
         <table class="stats-table">
           <thead><tr><th>지점</th><th class="num">접수</th><th class="num">본진행</th><th class="num" style="color:#4caf50">승인</th><th class="num" style="color:#ef5350">부결</th><th class="num">진행률</th></tr></thead>
-          <tbody id="stats-tbody"><tr><td colspan='6' class='stats-empty'>주간 데이터 로딩 중...</td></tr></tbody>
+          <tbody id="stats-tbody"><tr><td colspan='6' class='stats-empty'>데이터 로딩 중...</td></tr></tbody>
         </table>
       </div>
     </div>
   </div>
-</div>
+
+  <!-- ══ DSR 계산기 ══ -->
+  <div id="tab-dsr" class="tab-panel hidden">
+    <div class="dsr-layout">
+      <div class="dsr-wrap">
+
+        <!-- 소득 정보 -->
+        <div class="dsr-section">
+          <div class="dsr-section-title">
+            <span>💰 연소득</span>
+          </div>
+          <div class="dsr-row">
+            <label class="dsr-label">연간 소득</label>
+            <input class="dsr-input" id="dsr-income" type="number" placeholder="0" min="0"/>
+            <span class="dsr-unit">만원</span>
+          </div>
+          <div class="dsr-row">
+            <label class="dsr-label">소득 유형</label>
+            <select class="dsr-select" id="dsr-income-type">
+              <option value="1.0">근로소득 (100%)</option>
+              <option value="0.9">사업소득 (90%)</option>
+              <option value="0.8">기타소득 (80%)</option>
+              <option value="0.7">인정소득 (70%)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 신규 대출 -->
+        <div class="dsr-section">
+          <div class="dsr-section-title">
+            <span>🏠 신청 대출</span>
+          </div>
+          <div class="dsr-row">
+            <label class="dsr-label">대출 금액</label>
+            <input class="dsr-input" id="dsr-new-amount" type="number" placeholder="0" min="0"/>
+            <span class="dsr-unit">만원</span>
+          </div>
+          <div class="dsr-inline-row" style="margin-bottom:9px">
+            <div class="dsr-row" style="margin-bottom:0">
+              <label class="dsr-label">금리</label>
+              <input class="dsr-input" id="dsr-new-rate" type="number" placeholder="0.0" step="0.1" min="0"/>
+              <span class="dsr-unit">%</span>
+            </div>
+            <div class="dsr-row" style="margin-bottom:0">
+              <label class="dsr-label">대출기간</label>
+              <input class="dsr-input" id="dsr-new-term" type="number" placeholder="30" min="1" max="50"/>
+              <span class="dsr-unit">년</span>
+            </div>
+          </div>
+          <div class="dsr-row">
+            <label class="dsr-label">상환 방식</label>
+            <select class="dsr-select" id="dsr-new-type">
+              <option value="annuity">원리금균등상환</option>
+              <option value="principal">원금균등상환</option>
+              <option value="bullet">만기일시상환</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 기존 부채 -->
+        <div class="dsr-section">
+          <div class="dsr-section-title">
+            <span>📋 기존 부채</span>
+            <button class="dsr-reset-btn" id="dsr-add-debt">＋ 부채 추가</button>
+          </div>
+          <div id="dsr-debt-list"></div>
+          <div style="color:#3a4060;font-size:11px;text-align:center;padding:4px 0" id="dsr-debt-empty">기존 부채가 없으면 비워두세요</div>
+        </div>
+
+        <!-- 계산 버튼 -->
+        <button class="dsr-calc-btn" id="dsr-calc-btn">DSR 계산하기</button>
+
+        <!-- 결과 -->
+        <div class="dsr-section dsr-result hidden" id="dsr-result-section">
+          <div class="dsr-result-title">계산 결과</div>
+          <div class="dsr-result-grid">
+            <div class="dsr-result-item">
+              <div class="dsr-result-val" id="dsr-res-dsr">-</div>
+              <div class="dsr-result-lbl">DSR</div>
+            </div>
+            <div class="dsr-result-item">
+              <div class="dsr-result-val" style="color:#e8eaf0" id="dsr-res-monthly">-</div>
+              <div class="dsr-result-lbl">월 상환액 합계</div>
+            </div>
+            <div class="dsr-result-item">
+              <div class="dsr-result-val" style="color:#e8eaf0" id="dsr-res-income">-</div>
+              <div class="dsr-result-lbl">연간 인정소득</div>
+            </div>
+          </div>
+          <div class="dsr-result-bar-wrap">
+            <div class="dsr-result-bar" id="dsr-res-bar" style="width:0%"></div>
+          </div>
+          <div class="dsr-result-desc" id="dsr-res-desc"></div>
+        </div>
+
+        <!-- 참고 기준 -->
+        <div class="dsr-section" style="margin-bottom:8px">
+          <div class="dsr-section-title"><span>📌 DSR 규제 기준 (참고)</span></div>
+          <div style="color:#9aa5c4;font-size:12px;line-height:1.8">
+            <div>• <span style="color:#7c9ef8">은행권 (1금융)</span>: DSR <strong style="color:#e8eaf0">40%</strong> 이하</div>
+            <div>• <span style="color:#f8964a">비은행권 (2금융)</span>: DSR <strong style="color:#e8eaf0">50%</strong> 이하</div>
+            <div>• <span style="color:#6b7db3">총 대출 1억 이하</span>: DSR 규제 미적용 (일부 예외)</div>
+            <div style="margin-top:6px;color:#3a4060;font-size:11px">※ 실제 심사 기준은 금융사·상품·차주 조건에 따라 다를 수 있습니다</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
@@ -495,6 +665,7 @@ document.querySelectorAll(".main-tab").forEach(btn=>{
     $("tab-loan").classList.toggle("hidden",t!=="loan");
     $("tab-product").classList.toggle("hidden",t!=="product");
     $("tab-stats").classList.toggle("hidden",t!=="stats");
+    $("tab-dsr").classList.toggle("hidden",t!=="dsr");
   });
 });
 
@@ -958,10 +1129,36 @@ function getWeekStart(date){
 
 function formatDate(d){return d.toISOString().slice(0,10);}
 
+// 통계 - 주간/일별 공통
+let statsMode="weekly"; // "weekly" | "daily"
+let currentDayDate=null;
+
 function initWeeklyStats(){
   currentWeekStart=getWeekStart(new Date());
+  currentDayDate=new Date();
   renderWeekLabel();
+  renderDayLabel();
   loadWeeklyStats();
+
+  // 모드 토글
+  $("stats-mode-weekly").addEventListener("click",()=>{
+    statsMode="weekly";
+    $("stats-mode-weekly").classList.add("active");
+    $("stats-mode-daily").classList.remove("active");
+    $("stats-weekly-ctrl").style.display="flex";
+    $("stats-daily-ctrl").style.display="none";
+    loadWeeklyStats();
+  });
+  $("stats-mode-daily").addEventListener("click",()=>{
+    statsMode="daily";
+    $("stats-mode-daily").classList.add("active");
+    $("stats-mode-weekly").classList.remove("active");
+    $("stats-weekly-ctrl").style.display="none";
+    $("stats-daily-ctrl").style.display="flex";
+    loadDailyStats();
+  });
+
+  // 주간 버튼
   $("stats-prev").addEventListener("click",()=>{
     currentWeekStart.setDate(currentWeekStart.getDate()-7);
     renderWeekLabel();loadWeeklyStats();
@@ -970,17 +1167,46 @@ function initWeeklyStats(){
     currentWeekStart.setDate(currentWeekStart.getDate()+7);
     renderWeekLabel();loadWeeklyStats();
   });
+
+  // 일별 버튼
+  $("stats-day-prev").addEventListener("click",()=>{
+    currentDayDate.setDate(currentDayDate.getDate()-1);
+    renderDayLabel();loadDailyStats();
+  });
+  $("stats-day-next").addEventListener("click",()=>{
+    currentDayDate.setDate(currentDayDate.getDate()+1);
+    renderDayLabel();loadDailyStats();
+  });
 }
 
 function renderWeekLabel(){
-  const end=new Date(currentWeekStart);end.setDate(end.getDate()+4); // 월~금 (5일)
+  const end=new Date(currentWeekStart);end.setDate(end.getDate()+4);
   const fmt=d=>`${d.getMonth()+1}/${d.getDate()}`;
-  const days=["월","화","수","목","금"];
   $("stats-week-label").textContent=`${fmt(currentWeekStart)}(월) ~ ${fmt(end)}(금)`;
+}
+
+function renderDayLabel(){
+  const d=currentDayDate;
+  const days=["일","월","화","수","목","금","토"];
+  $("stats-day-label").textContent=`${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})`;
+}
+
+let dailyUnsub=null;
+function loadDailyStats(){
+  weeklyUnsubs.forEach(u=>u());weeklyUnsubs=[];
+  if(dailyUnsub){dailyUnsub();dailyUnsub=null;}
+  $("stats-tbody").innerHTML="<tr><td colspan='6' class='stats-empty'>로딩 중...</td></tr>";
+  $("s-total").textContent="-";$("s-appr").textContent="-";$("s-rej").textContent="-";
+  const dateStr=formatDate(currentDayDate);
+  dailyUnsub=onSnapshot(doc(db,"stats",dateStr),snap=>{
+    const d=snap.exists()?snap.data():{};
+    renderStats(d);
+  });
 }
 
 function loadWeeklyStats(){
   weeklyUnsubs.forEach(u=>u());weeklyUnsubs=[];
+  if(dailyUnsub){dailyUnsub();dailyUnsub=null;}
   // 월~금 5일만
   const dates=[];
   for(let i=0;i<5;i++){
@@ -1438,6 +1664,200 @@ function renderForm(id){
 
 function renderGuGrid(){return(REGIONS[activeSido]||[]).map(gu=>{const k=`${activeSido} ${gu}`,on=formData.regions.includes(k);return`<label class="gu-label${on?" on":""}" data-gu="${gu}"><input type="checkbox" ${on?"checked":""}> ${esc(gu)}</label>`;}).join("");}
 function bindGuEvents(){$("gu-grid").querySelectorAll(".gu-label").forEach(el=>{el.addEventListener("click",e=>{const gu=el.dataset.gu,k=`${activeSido} ${gu}`,cb=el.querySelector("input");if(e.target!==cb)cb.checked=!cb.checked;if(cb.checked){if(!formData.regions.includes(k))formData.regions.push(k);}else formData.regions=formData.regions.filter(r=>r!==k);el.classList.toggle("on",cb.checked);});});}
+
+// ═══════════════════════════════════════════
+// DSR 계산기
+// ═══════════════════════════════════════════
+(function initDSR(){
+  let debtList = []; // [{id, amount, rate, term, type}]
+  let debtIdCnt = 0;
+
+  // 월상환액 계산 함수
+  function calcMonthly(amount, annualRate, termYears, repayType){
+    const P = amount * 10000; // 만원→원
+    const r = annualRate / 100 / 12;
+    const n = termYears * 12;
+    if(P <= 0 || annualRate <= 0) return 0;
+    if(repayType === 'bullet'){
+      // 만기일시: 이자만 납부
+      return P * r;
+    } else if(repayType === 'principal'){
+      // 원금균등: 첫달 기준 (가장 보수적으로 첫달 최대값 사용)
+      return (P / n) + P * r;
+    } else {
+      // 원리금균등
+      if(r === 0) return P / n;
+      return P * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+    }
+  }
+
+  function fmt만원(원){
+    const 만 = Math.round(원 / 10000);
+    if(만 >= 10000) return (만/10000).toFixed(2)+'억';
+    return 만.toLocaleString()+'만원';
+  }
+
+  function renderDebtList(){
+    const el = $('dsr-debt-list');
+    const empty = $('dsr-debt-empty');
+    if(!debtList.length){
+      el.innerHTML='';
+      empty.style.display='block';
+      return;
+    }
+    empty.style.display='none';
+    el.innerHTML = debtList.map((d,i)=>`
+      <div class="dsr-loan-item" data-did="${d.id}">
+        <div class="dsr-loan-header">
+          <span class="dsr-loan-badge">부채 ${i+1}</span>
+        </div>
+        <button class="dsr-loan-del" data-did="${d.id}">✕</button>
+        <div class="dsr-row">
+          <label class="dsr-label">잔여원금</label>
+          <input class="dsr-input" data-f="amount" data-did="${d.id}" type="number" value="${d.amount||''}" placeholder="0" min="0"/>
+          <span class="dsr-unit">만원</span>
+        </div>
+        <div class="dsr-inline-row" style="margin-bottom:9px">
+          <div class="dsr-row" style="margin-bottom:0">
+            <label class="dsr-label">금리</label>
+            <input class="dsr-input" data-f="rate" data-did="${d.id}" type="number" value="${d.rate||''}" placeholder="0.0" step="0.1" min="0"/>
+            <span class="dsr-unit">%</span>
+          </div>
+          <div class="dsr-row" style="margin-bottom:0">
+            <label class="dsr-label">잔여기간</label>
+            <input class="dsr-input" data-f="term" data-did="${d.id}" type="number" value="${d.term||''}" placeholder="30" min="1"/>
+            <span class="dsr-unit">년</span>
+          </div>
+        </div>
+        <div class="dsr-row">
+          <label class="dsr-label">상환방식</label>
+          <select class="dsr-select" data-f="type" data-did="${d.id}">
+            <option value="annuity"${d.type==='annuity'?' selected':''}>원리금균등상환</option>
+            <option value="principal"${d.type==='principal'?' selected':''}>원금균등상환</option>
+            <option value="bullet"${d.type==='bullet'?' selected':''}>만기일시상환</option>
+          </select>
+        </div>
+      </div>
+    `).join('');
+
+    // 삭제 버튼
+    el.querySelectorAll('.dsr-loan-del').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const did = parseInt(btn.dataset.did);
+        debtList = debtList.filter(d=>d.id!==did);
+        renderDebtList();
+      });
+    });
+
+    // 입력 변경 → 데이터 반영
+    el.querySelectorAll('[data-did][data-f]').forEach(inp=>{
+      inp.addEventListener('input',()=>{
+        const did = parseInt(inp.dataset.did);
+        const f = inp.dataset.f;
+        const debt = debtList.find(d=>d.id===did);
+        if(debt){
+          debt[f] = inp.type==='number'? parseFloat(inp.value)||0 : inp.value;
+        }
+      });
+    });
+  }
+
+  $('dsr-add-debt').addEventListener('click',()=>{
+    debtList.push({id: ++debtIdCnt, amount:0, rate:0, term:30, type:'annuity'});
+    renderDebtList();
+  });
+
+  $('dsr-calc-btn').addEventListener('click',()=>{
+    const income = parseFloat($('dsr-income').value)||0;
+    const incomeRatio = parseFloat($('dsr-income-type').value)||1.0;
+    const adjIncome = income * incomeRatio; // 연 인정소득 (만원)
+
+    if(adjIncome <= 0){
+      alert('연간 소득을 입력하세요.');
+      $('dsr-income').focus();
+      return;
+    }
+
+    const newAmount = parseFloat($('dsr-new-amount').value)||0;
+    const newRate   = parseFloat($('dsr-new-rate').value)||0;
+    const newTerm   = parseFloat($('dsr-new-term').value)||30;
+    const newType   = $('dsr-new-type').value;
+
+    if(newAmount <= 0){
+      alert('신청 대출 금액을 입력하세요.');
+      $('dsr-new-amount').focus();
+      return;
+    }
+    if(newRate <= 0){
+      alert('신청 대출 금리를 입력하세요.');
+      $('dsr-new-rate').focus();
+      return;
+    }
+
+    // 신규 대출 월상환액
+    const newMonthly = calcMonthly(newAmount, newRate, newTerm, newType);
+
+    // 기존 부채 월상환액 합산
+    let debtMonthly = 0;
+    for(const d of debtList){
+      if(d.amount > 0 && d.rate > 0 && d.term > 0){
+        debtMonthly += calcMonthly(d.amount, d.rate, d.term, d.type);
+      }
+    }
+
+    const totalMonthly = newMonthly + debtMonthly;
+    const annualRepay  = totalMonthly * 12; // 원 단위
+    const annualIncome = adjIncome * 10000; // 원 단위
+
+    const dsr = annualIncome > 0 ? (annualRepay / annualIncome * 100) : 0;
+
+    // 결과 표시
+    const resultSec = $('dsr-result-section');
+    resultSec.classList.remove('hidden');
+    resultSec.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+    const dsrEl  = $('dsr-res-dsr');
+    const barEl  = $('dsr-res-bar');
+    const descEl = $('dsr-res-desc');
+
+    dsrEl.textContent = dsr.toFixed(1)+'%';
+    $('dsr-res-monthly').textContent = fmt만원(totalMonthly) + '/월';
+    $('dsr-res-income').textContent  = fmt만원(annualIncome) + '/년';
+
+    // 색상 & 바
+    dsrEl.className = 'dsr-result-val';
+    barEl.className = 'dsr-result-bar';
+    const pct = Math.min(dsr, 100);
+    barEl.style.width = pct.toFixed(1)+'%';
+
+    let msg = '';
+    if(dsr <= 40){
+      dsrEl.classList.add('ok');
+      msg = `✅ <strong>은행권·비은행권 모두 통과 가능한 수준</strong>입니다.<br>DSR ${dsr.toFixed(1)}% → 1금융(40%) 기준 충족, 2금융(50%) 기준 충족`;
+    } else if(dsr <= 50){
+      dsrEl.classList.add('warn');
+      barEl.classList.add('warn');
+      msg = `⚠️ <strong>비은행권(2금융) 수준</strong>입니다.<br>DSR ${dsr.toFixed(1)}% → 은행권(40%) 초과, 저축은행·새마을금고 등 검토 필요`;
+    } else {
+      dsrEl.classList.add('over');
+      barEl.classList.add('over');
+      msg = `🚫 <strong>DSR 규제 초과</strong>입니다.<br>DSR ${dsr.toFixed(1)}% → 1·2금융권 모두 초과. 소득 증가 또는 대출 감액·기간 연장 검토 필요`;
+    }
+
+    // 월상환 세부 안내
+    const breakdown = [];
+    breakdown.push(`• 신규 대출 월상환: <strong>${fmt만원(newMonthly)}</strong>`);
+    if(debtList.length > 0 && debtMonthly > 0){
+      breakdown.push(`• 기존 부채 월상환 합계: <strong>${fmt만원(debtMonthly)}</strong>`);
+    }
+    breakdown.push(`• 월 전체 상환 합계: <strong>${fmt만원(totalMonthly)}</strong>`);
+    breakdown.push(`• 연 인정소득: <strong>${adjIncome.toLocaleString()}만원</strong>`);
+
+    descEl.innerHTML = msg + '<br><br>' + breakdown.join('<br>');
+  });
+
+  renderDebtList();
+})();
 </script>
 <!-- 진행건 모달 -->
 <div id="progress-modal" class="modal-overlay hidden">
@@ -1496,6 +1916,8 @@ function bindGuEvents(){$("gu-grid").querySelectorAll(".gu-label").forEach(el=>{
       <button class="modal-save-btn" onclick="saveCard()">저장</button>
     </div>
   </div>
+</div>
+
 </div>
 
 </body>

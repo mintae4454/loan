@@ -863,6 +863,15 @@ function initProgressEditor(){
     showCtxMenu(e.clientX,e.clientY);
   });
 
+  // 복사 시 줄바꿈 중복 방지
+  editor.addEventListener("copy",e=>{
+    const sel=window.getSelection();
+    if(!sel||sel.isCollapsed)return;
+    e.preventDefault();
+    const text=editorSelectionToText(sel);
+    e.clipboardData.setData("text/plain",text);
+  });
+
   const searchEl=$("progress-search");
   if(searchEl){
     searchEl.addEventListener("keydown",e=>{
@@ -899,6 +908,15 @@ function initNoticeEditor(){
     showCtxMenu(e.clientX,e.clientY);
   });
 
+  // 복사 시 줄바꿈 중복 방지
+  editor.addEventListener("copy",e=>{
+    const sel=window.getSelection();
+    if(!sel||sel.isCollapsed)return;
+    e.preventDefault();
+    const text=editorSelectionToText(sel);
+    e.clipboardData.setData("text/plain",text);
+  });
+
   const searchEl=$("notice-search");
   if(searchEl){
     searchEl.addEventListener("keydown",e=>{
@@ -913,6 +931,31 @@ function saveSelection(){
   const sel=window.getSelection();
   if(sel&&sel.rangeCount>0) return sel.getRangeAt(0).cloneRange();
   return null;
+}
+
+// contenteditable 복사 시 줄바꿈 중복 방지
+// div/p 태그는 줄바꿈 1개로, br은 줄바꿈 1개로 변환
+function editorSelectionToText(sel){
+  const range=sel.getRangeAt(0);
+  const frag=range.cloneContents();
+  const tmp=document.createElement("div");
+  tmp.appendChild(frag);
+
+  // br → 줄바꿈 마커
+  tmp.querySelectorAll("br").forEach(br=>{
+    br.replaceWith("\n");
+  });
+  // div, p → 앞에 줄바꿈 1개 (첫 번째 제외)
+  let first=true;
+  tmp.querySelectorAll("div,p").forEach(el=>{
+    if(first){first=false;return;}
+    el.prepend("\n");
+  });
+
+  // 텍스트 추출 후 3개 이상 연속 줄바꿈 → 최대 2개로 정리
+  let text=tmp.innerText||tmp.textContent||"";
+  text=text.replace(/\n{3,}/g,"\n\n");
+  return text;
 }
 function restoreSelection(){
   if(!savedRange)return;

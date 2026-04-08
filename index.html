@@ -390,6 +390,9 @@ td.editing{background:#0a0e1a}
   .dsr-result-grid{grid-template-columns:1fr 1fr}
   .dsr-result-val{font-size:18px}
   .dsr-loan-item{padding:8px 10px}
+  /* 모바일에서 DSR+LTV 세로 배치 */
+  #tab-dsr > div { flex-direction: column !important; }
+  #tab-dsr > div > .dsr-layout { border-right: none !important; border-bottom: 1px solid #2a2d3e; }
 }
 </style>
 </head>
@@ -599,10 +602,13 @@ td.editing{background:#0a0e1a}
     </div>
   </div>
 
-  <!-- ══ DSR 계산기 ══ -->
-  <div id="tab-dsr" class="tab-panel hidden">
-    <div class="dsr-layout">
-      <div class="dsr-wrap">
+  <!-- ══ DSR / LTV 계산기 ══ -->
+  <div id="tab-dsr" class="tab-panel hidden" style="overflow:hidden">
+    <div style="display:flex;flex:1;overflow:hidden;min-height:0">
+
+      <!-- ── 왼쪽: DSR 계산기 ── -->
+      <div class="dsr-layout" style="flex:1;border-right:1px solid #2a2d3e;min-width:0">
+        <div class="dsr-wrap">
 
         <!-- 소득 정보 -->
         <div class="dsr-section">
@@ -705,6 +711,90 @@ td.editing{background:#0a0e1a}
         </div>
 
       </div>
+    </div>
+
+      <!-- ── 오른쪽: LTV 계산기 ── -->
+      <div class="dsr-layout" style="flex:1;min-width:0">
+        <div class="dsr-wrap">
+
+          <div class="dsr-section">
+            <div class="dsr-section-title"><span>🏠 LTV 계산기</span></div>
+
+            <div class="dsr-row">
+              <label class="dsr-label">KB시세</label>
+              <input class="dsr-input" id="ltv-price" type="number" placeholder="0" min="0"/>
+              <span class="dsr-unit">만원</span>
+            </div>
+            <div class="dsr-row">
+              <label class="dsr-label">LTV 비율</label>
+              <input class="dsr-input" id="ltv-ratio" type="number" placeholder="80" min="0" max="100" value="80"/>
+              <span class="dsr-unit">%</span>
+            </div>
+            <div class="dsr-row">
+              <label class="dsr-label">방공제 금액</label>
+              <input class="dsr-input" id="ltv-bangong" type="number" placeholder="0" min="0"/>
+              <span class="dsr-unit">만원</span>
+            </div>
+            <div class="dsr-row" id="ltv-prior-row" style="display:none">
+              <label class="dsr-label">기존 선순위</label>
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px" id="ltv-prior-list">
+                <div class="ltv-prior-item" style="display:flex;gap:6px;align-items:center">
+                  <input class="dsr-input ltv-prior-input" type="number" placeholder="0" min="0" style="flex:1"/>
+                  <span class="dsr-unit">만원</span>
+                  <button onclick="ltvAddPrior()" style="background:#4f6ef7;color:white;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0">＋</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 순위 선택 -->
+          <div class="dsr-section">
+            <div class="dsr-section-title"><span>📋 대출 순위</span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:6px;color:#9aa5c4;font-size:13px;cursor:pointer">
+                <input type="radio" name="ltv-rank" value="선순위" checked style="accent-color:#4f6ef7"> 선순위
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;color:#9aa5c4;font-size:13px;cursor:pointer">
+                <input type="radio" name="ltv-rank" value="후순위" style="accent-color:#4f6ef7"> 후순위
+              </label>
+            </div>
+          </div>
+
+          <button class="dsr-calc-btn" id="ltv-calc-btn">LTV 한도 계산하기</button>
+
+          <!-- 결과 -->
+          <div class="dsr-section dsr-result hidden" id="ltv-result-section">
+            <div class="dsr-result-title">계산 결과</div>
+            <div class="dsr-result-grid" style="grid-template-columns:1fr 1fr">
+              <div class="dsr-result-item">
+                <div class="dsr-result-val" id="ltv-res-limit" style="color:#7c9ef8">-</div>
+                <div class="dsr-result-lbl">LTV 기준 한도</div>
+              </div>
+              <div class="dsr-result-item">
+                <div class="dsr-result-val" id="ltv-res-available" style="color:#4caf50">-</div>
+                <div class="dsr-result-lbl">실제 가용 한도</div>
+              </div>
+            </div>
+            <div class="dsr-result-bar-wrap">
+              <div class="dsr-result-bar" id="ltv-res-bar" style="width:0%"></div>
+            </div>
+            <div class="dsr-result-desc" id="ltv-res-desc" style="color:#9aa5c4;font-size:12px;line-height:1.8"></div>
+          </div>
+
+          <!-- 참고 -->
+          <div class="dsr-section" style="margin-bottom:8px">
+            <div class="dsr-section-title"><span>📌 계산 방식</span></div>
+            <div style="color:#9aa5c4;font-size:12px;line-height:1.8">
+              <div>• <strong style="color:#e8eaf0">LTV 기준 한도</strong> = KB시세 × LTV% − 방공제</div>
+              <div>• <strong style="color:#e8eaf0">선순위 가용 한도</strong> = LTV 기준 한도</div>
+              <div>• <strong style="color:#e8eaf0">후순위 가용 한도</strong> = LTV 기준 한도 − 기존 선순위</div>
+              <div style="margin-top:6px;color:#3a4060;font-size:11px">※ 실제 한도는 금융사·심사 조건에 따라 다를 수 있습니다</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -2222,6 +2312,86 @@ function bindGuEvents(){
   });
 
   renderDebtList();
+})();
+
+// ═══════════════════════════════════════════
+// LTV 계산기
+// ═══════════════════════════════════════════
+window.ltvAddPrior = function(){
+  const list = document.getElementById('ltv-prior-list');
+  const item = document.createElement('div');
+  item.className = 'ltv-prior-item';
+  item.style.cssText = 'display:flex;gap:6px;align-items:center';
+  item.innerHTML = `
+    <input class="dsr-input ltv-prior-input" type="number" placeholder="0" min="0" style="flex:1"/>
+    <span class="dsr-unit">만원</span>
+    <button onclick="this.closest('.ltv-prior-item').remove()" style="background:#7a1e1e;color:white;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0">✕</button>
+  `;
+  list.appendChild(item);
+};
+
+(function initLTV(){
+  function fmt만원(v){
+    if(v>=10000) return (v/10000).toFixed(2)+'억';
+    return v.toLocaleString()+'만원';
+  }
+
+  $('ltv-calc-btn').addEventListener('click',()=>{
+    const price   = parseFloat($('ltv-price').value)||0;
+    const ratio   = parseFloat($('ltv-ratio').value)||0;
+    const bangong = parseFloat($('ltv-bangong').value)||0;
+    const rank    = document.querySelector('input[name="ltv-rank"]:checked')?.value || '선순위';
+
+    // 기존 선순위 합산 (여러 개)
+    const priorInputs = document.querySelectorAll('.ltv-prior-input');
+    let prior = 0;
+    priorInputs.forEach(inp => { prior += parseFloat(inp.value)||0; });
+
+    if(price <= 0){ alert('KB시세를 입력하세요.'); $('ltv-price').focus(); return; }
+    if(ratio <= 0){ alert('LTV 비율을 입력하세요.'); $('ltv-ratio').focus(); return; }
+
+    // LTV 기준 한도 = KB시세 × LTV% − 방공제
+    const ltvLimit     = Math.floor(price * ratio / 100) - bangong;
+    const available    = rank === '후순위' ? ltvLimit - prior : ltvLimit;
+    const availableSafe = Math.max(available, 0);
+
+    const resultSec = $('ltv-result-section');
+    resultSec.classList.remove('hidden');
+    resultSec.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+    $('ltv-res-limit').textContent     = ltvLimit > 0 ? fmt만원(ltvLimit) : '한도없음';
+    $('ltv-res-available').textContent = availableSafe > 0 ? fmt만원(availableSafe) : '한도없음';
+
+    const barPct = ltvLimit > 0 ? Math.min(availableSafe / ltvLimit * 100, 100) : 0;
+    const barEl  = $('ltv-res-bar');
+    barEl.style.width = barPct.toFixed(1)+'%';
+    barEl.className   = 'dsr-result-bar';
+
+    const lines = [
+      `• KB시세: <strong>${fmt만원(price)}</strong>`,
+      `• LTV ${ratio}% 적용: <strong>${fmt만원(Math.floor(price*ratio/100))}</strong>`,
+      `• 방공제 차감: <strong>−${fmt만원(bangong)}</strong>`,
+      `• LTV 기준 한도: <strong>${ltvLimit>0?fmt만원(ltvLimit):'한도없음'}</strong>`,
+    ];
+    if(rank === '후순위'){
+      priorInputs.forEach((inp,i)=>{
+        const v=parseFloat(inp.value)||0;
+        if(v>0) lines.push(`• ${i+1}순위 선순위: <strong>−${fmt만원(v)}</strong>`);
+      });
+      lines.push(`• 후순위 가용 한도: <strong style="color:#4caf50">${availableSafe>0?fmt만원(availableSafe):'한도없음'}</strong>`);
+    } else {
+      lines.push(`• 선순위 가용 한도: <strong style="color:#4caf50">${availableSafe>0?fmt만원(availableSafe):'한도없음'}</strong>`);
+    }
+    $('ltv-res-desc').innerHTML = lines.join('<br>');
+  });
+
+  // 선순위/후순위 전환 시 입력란 표시/숨김
+  document.querySelectorAll('input[name="ltv-rank"]').forEach(r=>{
+    r.addEventListener('change',()=>{
+      const priorRow = document.getElementById('ltv-prior-row');
+      if(priorRow) priorRow.style.display = r.value==='후순위' ? 'flex' : 'none';
+    });
+  });
 })();
 </script>
 <!-- 진행건 모달 -->

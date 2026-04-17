@@ -129,6 +129,21 @@ input,textarea,select,button{font-family:inherit}
 .save-indicator.saved{color:#4caf50;background:#0a2a0a}
 .save-indicator.conflict{color:#ef5350;background:#2a0a0a}
 
+/* 이름 입력 팝업 */
+#nickname-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2000}
+.nickname-card{background:#1a1d2e;border:1px solid #2a2d3e;border-radius:14px;padding:36px 32px;width:100%;max-width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.nickname-title{font-size:18px;font-weight:700;color:#e8eaf0;margin-bottom:8px}
+.nickname-sub{color:#6b7db3;font-size:13px;margin-bottom:24px}
+.nickname-input{width:100%;background:#0f1117;border:1px solid #2a2d3e;border-radius:8px;padding:12px 14px;color:#e8eaf0;font-size:15px;outline:none;text-align:center;margin-bottom:14px}
+.nickname-input:focus{border-color:#4f6ef7}
+.nickname-btn{width:100%;background:linear-gradient(135deg,#4f6ef7,#7c3aed);color:white;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer}
+.nickname-btn:disabled{opacity:.5}
+
+/* 입력 중 표시 */
+.typing-indicator{font-size:11px;color:#f8c84a;background:#2a2200;border-radius:3px;padding:2px 7px;flex-shrink:0;animation:fadeIn .2s ease}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.typing-dot{display:inline-block;animation:blink .8s infinite}
+
 /* 컨텍스트 메뉴 */
 .ctx-menu{position:fixed;background:#1e2135;border:1px solid #2a2d3e;border-radius:7px;padding:5px;z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .ctx-item{padding:6px 10px;color:#c0c8e0;font-size:12px;cursor:pointer;border-radius:4px;display:flex;align-items:center;gap:8px}
@@ -417,6 +432,16 @@ td.editing{background:#0a0e1a}
   </div>
 </div>
 
+<!-- 이름 입력 팝업 -->
+<div id="nickname-overlay" class="hidden">
+  <div class="nickname-card">
+    <div class="nickname-title">👋 안녕하세요!</div>
+    <p class="nickname-sub">함께 쓰는 시스템이에요.<br>내 이름(별명)을 입력해주세요</p>
+    <input class="nickname-input" id="nickname-input" placeholder="예: 홍길동" maxlength="10"/>
+    <button class="nickname-btn" id="nickname-btn">시작하기</button>
+  </div>
+</div>
+
 <div id="app" class="hidden">
   <div class="drawer-overlay" id="drawer-overlay"></div>
   <div class="company-drawer" id="company-drawer">
@@ -494,6 +519,7 @@ td.editing{background:#0a0e1a}
           <input class="panel-search" id="progress-search" placeholder="이름 검색 후 Enter"/>
           <span class="save-indicator hidden" id="progress-save-indicator"></span>
         </div>
+        <div style="min-height:20px;padding:0 10px;flex-shrink:0"><span class="typing-indicator hidden" id="progress-typing"></span></div>
         <div class="rich-editor" id="progress-editor" contenteditable="true" spellcheck="false" placeholder="진행건 입력..."></div>
       </div>
 
@@ -529,6 +555,7 @@ td.editing{background:#0a0e1a}
           <input class="panel-search" id="notice-search" placeholder="이름 검색 후 Enter"/>
           <span class="save-indicator hidden" id="notice-save-indicator"></span>
         </div>
+        <div style="min-height:20px;padding:0 10px;flex-shrink:0"><span class="typing-indicator hidden" id="notice-typing"></span></div>
         <div class="rich-editor" id="notice-editor" contenteditable="true" spellcheck="false" placeholder="지점접수현황 입력..."></div>
       </div>
 
@@ -778,6 +805,32 @@ const esc=s=>String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 
 let currentUser=null,companies={},allLoans=[],loans=[],products=[],selectedCompany="",selectedProduct=null;
 let loansUnsub=null,formData={},activeSido="",sharedTimers={};
+let myNickname=""; // 내 이름
+
+// ── 닉네임 팝업 ──
+function initNickname(){
+  // 로컬스토리지에 저장된 이름 있으면 바로 사용
+  const saved=localStorage.getItem("lms_nickname");
+  if(saved){myNickname=saved;return Promise.resolve();}
+  // 없으면 팝업 표시
+  return new Promise(resolve=>{
+    const overlay=$("nickname-overlay");
+    const input=$("nickname-input");
+    const btn=$("nickname-btn");
+    overlay.classList.remove("hidden");
+    input.focus();
+    const confirm=()=>{
+      const name=input.value.trim();
+      if(!name){input.style.borderColor="#ef5350";return;}
+      myNickname=name;
+      localStorage.setItem("lms_nickname",name);
+      overlay.classList.add("hidden");
+      resolve();
+    };
+    btn.addEventListener("click",confirm);
+    input.addEventListener("keydown",e=>{if(e.key==="Enter")confirm();});
+  });
+}
 
 // ── 메인 탭 ──
 document.querySelectorAll(".main-tab").forEach(btn=>{
@@ -804,13 +857,15 @@ $("login-btn").addEventListener("click",async()=>{
 $("login-pw").addEventListener("keydown",e=>{if(e.key==="Enter")$("login-btn").click();});
 $("logout-btn").addEventListener("click",()=>signOut(auth));
 
-onAuthStateChanged(auth,user=>{
+onAuthStateChanged(auth,async user=>{
   $("loading").classList.add("hidden");
   if(user){
     currentUser=user;
     $("login-page").classList.add("hidden");
     $("app").classList.remove("hidden");
     $("user-email").textContent=user.email;
+    // 닉네임 먼저 확인 후 앱 초기화
+    await initNickname();
     initData();
   }else{
     currentUser=null;
@@ -892,8 +947,8 @@ function initData(){
   });
 
   // 진행건 / 지점접수현황 (줄 단위 에디터)
-  initLineEditor("progress-editor","progress-search","progress","progress-save-indicator");
-  initLineEditor("notice-editor","notice-search","notice","notice-save-indicator");
+  initLineEditor("progress-editor","progress-search","progress","progress-save-indicator","progress-typing");
+  initLineEditor("notice-editor","notice-search","notice","notice-save-indicator","notice-typing");
 
   // 상품
   onSnapshot(collection(db,"products"),snap=>{
@@ -927,89 +982,121 @@ function initData(){
 // ══════════════════════════════════════════
 // 줄 단위 Rich Text Editor (진행건 / 지점접수현황 공통)
 // ══════════════════════════════════════════
-function initLineEditor(editorId, searchId, dbKey, indicatorId){
+function initLineEditor(editorId, searchId, dbKey, indicatorId, typingId){
   const editor=$(editorId);
   const indicator=indicatorId?$(indicatorId):null;
+  const typingEl=typingId?$(typingId):null;
   if(!editor) return;
 
-  let saveTimers={};       // 줄 key별 저장 타이머
-  let savingLines={};      // 저장 중인 줄 key
-  let lastSavedLines={};   // 마지막 저장 내용 (덮어쓰기 방지)
-  let isApplying=false;    // snapshot 적용 중 플래그 (무한루프 방지)
-  let pendingSave=false;   // 저장 대기 중 여부
+  let saveTimers={};
+  let savingLines={};
+  let lastSavedLines={};
+  let isApplying=false;
+  let typingTimer=null;        // 내 입력 중 → Firestore 전송 타이머
+  let typingClearTimer=null;   // 상대방 입력 중 → 사라지는 타이머
 
+  // ── 저장 상태 표시 ──
   function showIndicator(state){
     if(!indicator) return;
     indicator.classList.remove("hidden");
     indicator.className="save-indicator "+state;
     if(state==="saving") indicator.textContent="저장 중...";
-    else if(state==="saved") indicator.textContent="✓ 저장됨";
+    else if(state==="saved"){indicator.textContent="✓ 저장됨";setTimeout(()=>indicator.classList.add("hidden"),2000);}
     else if(state==="conflict") indicator.textContent="⚠ 충돌";
   }
-  function hideIndicator(){
-    if(!indicator) return;
-    setTimeout(()=>indicator.classList.add("hidden"), 2000);
+
+  // ── 입력 중 표시 (상대방 화면) ──
+  function showTyping(name){
+    if(!typingEl||!name) return;
+    typingEl.innerHTML=`✏ <span class="typing-dot">●</span> ${name}님이 입력 중...`;
+    typingEl.classList.remove("hidden");
+    clearTimeout(typingClearTimer);
+    // 5초 후 자동으로 사라짐
+    typingClearTimer=setTimeout(()=>typingEl.classList.add("hidden"), 5000);
+  }
+  function hideTyping(){
+    if(!typingEl) return;
+    clearTimeout(typingClearTimer);
+    typingEl.classList.add("hidden");
   }
 
-  // 에디터의 블록(줄) 목록 가져오기
+  // ── 내가 입력 중임을 Firestore에 알림 ──
+  function broadcastTyping(){
+    clearTimeout(typingTimer);
+    typingTimer=setTimeout(async()=>{
+      try{
+        await setDoc(
+          doc(db,"typing_status",dbKey),
+          {name:myNickname, at:new Date().toISOString()},
+          {merge:true}
+        );
+      }catch(e){/* 무시 */}
+    }, 200); // 200ms 디바운스 (너무 자주 쓰지 않게)
+  }
+
+  // ── 상대방 입력 중 수신 ──
+  onSnapshot(doc(db,"typing_status",dbKey),snap=>{
+    if(!snap.exists()) return;
+    const data=snap.data();
+    // 내 이름이면 무시
+    if(data.name===myNickname) return;
+    // 5초 이상 된 데이터면 무시
+    const age=(Date.now()-new Date(data.at).getTime())/1000;
+    if(age>5) return;
+    showTyping(data.name);
+  });
+
+  // 에디터 블록(줄) 목록
   function getLines(){
     const blocks=editor.querySelectorAll(":scope > div, :scope > p");
     if(blocks.length>0) return [...blocks];
-    return [editor]; // 블록 없으면 에디터 전체가 한 줄
+    return [editor];
   }
-
   function lineKey(i){ return `line_${i}`; }
 
-  // ── Firestore 실시간 수신 ──
+  // ── Firestore 실시간 수신 (순서 보장) ──
   onSnapshot(collection(db,`shared_lines_${dbKey}`),snap=>{
     if(isApplying) return;
-
-    // 저장 중인 줄이 하나라도 있으면 전체 snapshot 적용 스킵
     if(Object.values(savingLines).some(v=>v)) return;
 
-    // 서버 데이터 정렬 (idx 기준)
     const serverDocs=snap.docs
       .map(d=>({key:d.id,idx:d.data().idx??parseInt(d.id.replace("line_","")),html:d.data().html||""}))
       .sort((a,b)=>a.idx-b.idx);
 
     if(!serverDocs.length) return;
-
-    const lines=getLines();
     isApplying=true;
 
     serverDocs.forEach(({key,idx,html})=>{
-      // 내가 방금 저장한 내용이면 스킵
       if(lastSavedLines[key]===html) return;
-
-      const line=lines[idx];
-      if(line && line!==editor){
-        // 기존 줄 업데이트 (내용이 다를 때만)
-        if(line.innerHTML!==html) line.innerHTML=html;
-      } else if(!line || (idx>0 && !lines[idx])){
-        // 서버에 줄이 더 많으면 추가
+      const currentLines=editor.querySelectorAll(":scope > div, :scope > p");
+      if(currentLines[idx]){
+        if(currentLines[idx].innerHTML!==html) currentLines[idx].innerHTML=html;
+      }else{
         const newDiv=document.createElement("div");
         newDiv.innerHTML=html;
-        editor.appendChild(newDiv);
+        const allLines=editor.querySelectorAll(":scope > div, :scope > p");
+        if(allLines.length===0||idx>=allLines.length) editor.appendChild(newDiv);
+        else editor.insertBefore(newDiv,allLines[idx]);
       }
     });
 
     isApplying=false;
   });
 
-  // ── 입력 감지 → 변경된 줄만 저장 ──
+  // ── 입력 감지 → 입력 중 브로드캐스트 + 줄 저장 ──
   editor.addEventListener("input",()=>{
     if(isApplying) return;
+
+    // 입력 중 알림 전송
+    broadcastTyping();
 
     const lines=getLines();
     lines.forEach((line,i)=>{
       const key=lineKey(i);
       const html=(line===editor)?editor.innerHTML:(line.innerHTML||"");
-
-      // 이전 저장 내용과 같으면 스킵
       if(lastSavedLines[key]===html) return;
 
       clearTimeout(saveTimers[key]);
-      pendingSave=true;
       showIndicator("saving");
 
       saveTimers[key]=setTimeout(async()=>{
@@ -1017,20 +1104,18 @@ function initLineEditor(editorId, searchId, dbKey, indicatorId){
         try{
           await setDoc(
             doc(db,`shared_lines_${dbKey}`,key),
-            {html, idx:i, updatedBy:currentUser.email, updatedAt:new Date().toISOString()},
+            {html,idx:i,updatedBy:myNickname,updatedAt:new Date().toISOString()},
             {merge:true}
           );
           lastSavedLines[key]=html;
           showIndicator("saved");
-          hideIndicator();
         }catch(e){
-          console.error(`저장 실패 (${dbKey} ${key}):`,e);
+          console.error(`저장 실패(${dbKey} ${key}):`,e);
           showIndicator("conflict");
         }finally{
           savingLines[key]=false;
-          pendingSave=false;
         }
-      }, 600);
+      },600);
     });
   });
 

@@ -109,7 +109,7 @@ input,textarea,select,button{font-family:inherit}
 .nickname-input{width:100%;background:#0f1117;border:1px solid #2a2d3e;border-radius:8px;padding:12px 14px;color:#e8eaf0;font-size:15px;outline:none;text-align:center;margin-bottom:14px}
 .nickname-input:focus{border-color:#4f6ef7}
 .nickname-btn{width:100%;background:linear-gradient(135deg,#4f6ef7,#7c3aed);color:white;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer}
-.typing-indicator{font-size:11px;color:#f8c84a;background:#2a2200;border-radius:3px;padding:2px 7px;flex-shrink:0;animation:fadeIn .2s ease}
+.typing-indicator{font-size:11px;border-radius:3px;padding:2px 7px;flex-shrink:0;animation:fadeIn .2s ease}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
 .typing-dot{display:inline-block;animation:blink .8s infinite}
 .ctx-menu{position:fixed;background:#1e2135;border:1px solid #2a2d3e;border-radius:7px;padding:5px;z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
@@ -703,8 +703,17 @@ function initData(){
 }
 
 // ══════════════════════════════════════════
-// 줄 단위 에디터
+// 줄 단위 에디터 (복사 방지 + 잠금)
 // ══════════════════════════════════════════
+
+// 토스트 메시지
+function showToast(msg){
+  let t=document.getElementById("editor-toast");
+  if(!t){t=document.createElement("div");t.id="editor-toast";t.style.cssText="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#2e1a1a;color:#ef5350;border:1px solid #5a2a2a;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:700;z-index:9999;pointer-events:none;transition:opacity .3s";document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity="1";
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity="0";},2500);
+}
+
 function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
   const editor=$(editorId);
   const indicator=indicatorId?$(indicatorId):null;
@@ -713,11 +722,12 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
 
   let saveTimers={};
   let savingLines={};
-  let lastSavedLines={};   // { "line_0": html, ... }
+  let lastSavedLines={};
   let isApplying=false;
-  let initialLoadDone=false;
-  let typingTimer=null;
-  let typingClearTimer=null;
+  let iAmLocked=false;      // 내가 잠금 보유 중
+  let lockRenewTimer=null;  // 잠금 갱신 타이머 (5분 자동 해제 방지)
+  let lockReleaseTimer=null;// 포커스 빠진 후 해제 타이머
+  const LOCK_TTL=5*60*1000; // 5분
 
   function showIndicator(state){
     if(!indicator)return;
@@ -728,84 +738,144 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
     else if(state==="conflict")indicator.textContent="⚠ 충돌";
   }
 
-  function showTyping(name){
-    if(!typingEl||!name)return;
-    typingEl.innerHTML=`✏ <span class="typing-dot">●</span> ${name}님이 입력 중...`;
-    typingEl.classList.remove("hidden");
-    clearTimeout(typingClearTimer);
-    typingClearTimer=setTimeout(()=>typingEl.classList.add("hidden"),5000);
+  // ── 잠금 획득 ──
+  async function acquireLock(){
+    try{
+      // 현재 잠금 확인
+      const lockSnap=await getDoc(doc(db,"editor_lock",dbKey));
+      if(lockSnap.exists()){
+        const d=lockSnap.data();
+        const age=Date.now()-new Date(d.at).getTime();
+        // 다른 사람이 잠금 중이고 5분 안 지났으면 차단
+        if(d.name!==myNickname && age<LOCK_TTL){
+          showToast(`🔒 ${d.name}님이 편집 중입니다`);
+          editor.blur();
+          return false;
+        }
+      }
+      // 잠금 등록
+      await setDoc(doc(db,"editor_lock",dbKey),{
+        name:myNickname,
+        at:new Date().toISOString()
+      });
+      iAmLocked=true;
+      // 4분마다 갱신 (5분 TTL 유지)
+      clearInterval(lockRenewTimer);
+      lockRenewTimer=setInterval(async()=>{
+        if(iAmLocked){
+          try{await setDoc(doc(db,"editor_lock",dbKey),{name:myNickname,at:new Date().toISOString()});}
+          catch(e){}
+        }
+      },4*60*1000);
+      return true;
+    }catch(e){
+      console.error("잠금 획득 실패:",e);
+      return true; // 실패해도 편집은 허용
+    }
   }
 
-  function broadcastTyping(){
-    clearTimeout(typingTimer);
-    typingTimer=setTimeout(async()=>{
-      try{await setDoc(doc(db,"typing_status",dbKey),{name:myNickname,at:new Date().toISOString()},{merge:true});}
-      catch(e){}
-    },300);
+  // ── 잠금 해제 ──
+  async function releaseLock(){
+    if(!iAmLocked)return;
+    iAmLocked=false;
+    clearInterval(lockRenewTimer);
+    try{
+      const lockSnap=await getDoc(doc(db,"editor_lock",dbKey));
+      if(lockSnap.exists()&&lockSnap.data().name===myNickname){
+        await deleteDoc(doc(db,"editor_lock",dbKey));
+      }
+    }catch(e){}
   }
 
-  // 상대방 입력 중 수신
-  onSnapshot(doc(db,"typing_status",dbKey),snap=>{
-    if(!snap.exists())return;
-    const data=snap.data();
-    if(data.name===myNickname)return;
-    const age=(Date.now()-new Date(data.at).getTime())/1000;
-    if(age>5)return;
-    showTyping(data.name);
+  // ── 잠금 상태 표시 (헤더에) ──
+  onSnapshot(doc(db,"editor_lock",dbKey),snap=>{
+    if(!typingEl)return;
+    if(!snap.exists()){
+      // 잠금 없음
+      if(!iAmLocked) typingEl.classList.add("hidden");
+      return;
+    }
+    const d=snap.data();
+    const age=Date.now()-new Date(d.at).getTime();
+    if(age>=LOCK_TTL){typingEl.classList.add("hidden");return;}
+    if(d.name===myNickname){
+      // 내가 잠금 중
+      typingEl.innerHTML=`🔒 내가 편집 중`;
+      typingEl.classList.remove("hidden");
+      typingEl.style.color="#4caf50";
+      typingEl.style.background="#0a2a0a";
+    }else{
+      // 남이 잠금 중
+      typingEl.innerHTML=`🔒 ${d.name}님이 편집 중`;
+      typingEl.classList.remove("hidden");
+      typingEl.style.color="#f8964a";
+      typingEl.style.background="#2a1a00";
+    }
   });
 
-  // ★ Firestore 수신 - onSnapshot 딱 하나
+  // ── 포커스 획득 → 잠금 시도 ──
+  editor.addEventListener("mousedown",async e=>{
+    const ok=await acquireLock();
+    if(!ok){
+      e.preventDefault(); // 포커스 진입 자체 막기
+    }
+  });
+
+  editor.addEventListener("focus",async()=>{
+    clearTimeout(lockReleaseTimer);
+    if(!iAmLocked){
+      const ok=await acquireLock();
+      if(!ok) editor.blur();
+    }
+  });
+
+  // ── 포커스 해제 → 잠금 해제 (1초 후) ──
+  editor.addEventListener("blur",()=>{
+    clearTimeout(lockReleaseTimer);
+    lockReleaseTimer=setTimeout(()=>{
+      releaseLock();
+    },1000); // 1초 후 해제 (실수로 포커스 잠깐 빠진 경우 대비)
+  });
+
+  // 페이지 닫힐 때 잠금 해제
+  window.addEventListener("beforeunload",()=>{
+    if(iAmLocked){
+      // beforeunload에선 async 못 씀, sync fetch 사용
+      navigator.sendBeacon(`https://firestore.googleapis.com`,JSON.stringify({}));
+      releaseLock(); // 최선의 시도
+    }
+  });
+
+  // ── Firestore 수신 (복사 방지: 포커스 있으면 건드리지 않음) ──
   onSnapshot(collection(db,`shared_lines_${dbKey}`),snap=>{
     if(isApplying)return;
-    if(Object.values(savingLines).some(v=>v))return;
+    // ★ 내가 편집 중이면 snapshot 무시 (복사 방지 핵심)
+    if(iAmLocked)return;
 
     const serverDocs=snap.docs
       .map(d=>({key:d.id,idx:d.data().idx??parseInt(d.id.replace("line_","")),html:d.data().html||""}))
       .sort((a,b)=>a.idx-b.idx);
 
     if(!serverDocs.length){
-      // 서버에 줄이 없으면 = 전체 삭제됨
-      if(initialLoadDone && editor.innerHTML!==""){
-        isApplying=true;
-        editor.innerHTML="";
-        lastSavedLines={};
-        isApplying=false;
+      if(editor.innerHTML!==""){
+        isApplying=true;editor.innerHTML="";lastSavedLines={};isApplying=false;
       }
-      initialLoadDone=true;
       return;
     }
 
-    isApplying=true;
-
-    if(!initialLoadDone){
-      // ★ 첫 로드: 통째로 교체 → 중복 삽입 원천 차단
-      editor.innerHTML=serverDocs.map(({html})=>`<div>${html}</div>`).join("");
-      serverDocs.forEach(({key,html})=>{lastSavedLines[key]=html;});
-      initialLoadDone=true;
-    }else{
-      // ★ 이후: 변경된 줄만 업데이트
-      serverDocs.forEach(({key,idx,html})=>{
-        if(lastSavedLines[key]===html)return;
-        const currentLines=editor.querySelectorAll(":scope > div, :scope > p");
-        if(currentLines[idx]){
-          if(currentLines[idx].innerHTML!==html)currentLines[idx].innerHTML=html;
-        }else{
-          const newDiv=document.createElement("div");
-          newDiv.innerHTML=html;
-          const allLines=editor.querySelectorAll(":scope > div, :scope > p");
-          if(!allLines.length||idx>=allLines.length)editor.appendChild(newDiv);
-          else editor.insertBefore(newDiv,allLines[idx]);
-        }
-      });
+    // ★ 항상 통째로 비교 후 교체 → 중복 삽입 원천 차단
+    const newHtml=serverDocs.map(({html})=>`<div>${html}</div>`).join("");
+    if(editor.innerHTML!==newHtml){
+      isApplying=true;
+      editor.innerHTML=newHtml;
+      isApplying=false;
     }
-
-    isApplying=false;
+    serverDocs.forEach(({key,html})=>{lastSavedLines[key]=html;});
   });
 
-  // ★ 입력 감지
+  // ── 입력 감지 → 줄 저장 ──
   editor.addEventListener("input",()=>{
     if(isApplying)return;
-    broadcastTyping();
 
     // ★ 에디터가 완전히 비었을 때 (전체 삭제)
     const isEmpty=editor.innerHTML===""||editor.innerHTML==="<br>";
@@ -816,20 +886,13 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
         clearTimeout(saveTimers["__clear__"]);
         saveTimers["__clear__"]=setTimeout(async()=>{
           try{
-            // line_0 은 빈 내용으로 저장, 나머지는 삭제
-            await setDoc(
-              doc(db,`shared_lines_${dbKey}`,"line_0"),
-              {html:"",idx:0,updatedBy:myNickname,updatedAt:new Date().toISOString()},
-              {merge:true}
-            );
+            await setDoc(doc(db,`shared_lines_${dbKey}`,"line_0"),
+              {html:"",idx:0,updatedBy:myNickname,updatedAt:new Date().toISOString()},{merge:true});
             const deleteKeys=existingKeys.filter(k=>k!=="line_0");
             await Promise.all(deleteKeys.map(k=>deleteDoc(doc(db,`shared_lines_${dbKey}`,k))));
             lastSavedLines={"line_0":""};
             showIndicator("saved");
-          }catch(e){
-            console.error("전체 삭제 저장 실패:",e);
-            showIndicator("conflict");
-          }
+          }catch(e){showIndicator("conflict");}
         },600);
       }
       return;
@@ -838,31 +901,21 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
     // 일반 줄 저장
     const blocks=editor.querySelectorAll(":scope > div, :scope > p");
     const lineArr=blocks.length>0?[...blocks]:[editor];
-
     lineArr.forEach((line,i)=>{
       const key=`line_${i}`;
       const html=line===editor?editor.innerHTML:(line.innerHTML||"");
       if(lastSavedLines[key]===html)return;
-
       clearTimeout(saveTimers[key]);
       showIndicator("saving");
-
       saveTimers[key]=setTimeout(async()=>{
         savingLines[key]=true;
         try{
-          await setDoc(
-            doc(db,`shared_lines_${dbKey}`,key),
-            {html,idx:i,updatedBy:myNickname,updatedAt:new Date().toISOString()},
-            {merge:true}
-          );
+          await setDoc(doc(db,`shared_lines_${dbKey}`,key),
+            {html,idx:i,updatedBy:myNickname,updatedAt:new Date().toISOString()},{merge:true});
           lastSavedLines[key]=html;
           showIndicator("saved");
-        }catch(e){
-          console.error(`저장 실패(${dbKey} ${key}):`,e);
-          showIndicator("conflict");
-        }finally{
-          savingLines[key]=false;
-        }
+        }catch(e){showIndicator("conflict");}
+        finally{savingLines[key]=false;}
       },600);
     });
   });

@@ -71,7 +71,6 @@ input,textarea,select,button{font-family:inherit}
 .loan-item{background:#1a1d2e;border:1px solid #2a2d3e;border-radius:6px;padding:9px;animation:fadeIn .2s ease;cursor:pointer}
 .loan-view{cursor:pointer}
 .loan-view:hover{opacity:.9}
-.loan-item:active{cursor:grabbing}
 .loan-item.dragging{opacity:.5;border:2px dashed #4f6ef7}
 .loan-item.drag-over{border-color:#4caf50;background:#1a2e1a}
 .loan-header{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
@@ -299,7 +298,6 @@ td.editing{background:#0a0e1a}
 </style>
 </head>
 <body>
-
 <div id="loading"><div class="spinner"></div><p>로딩 중...</p></div>
 
 <div id="login-page" class="hidden">
@@ -326,10 +324,7 @@ td.editing{background:#0a0e1a}
 <div id="app" class="hidden">
   <div class="drawer-overlay" id="drawer-overlay"></div>
   <div class="company-drawer" id="company-drawer">
-    <div class="drawer-header">
-      <span class="drawer-title">🏢 업체 선택</span>
-      <button class="drawer-close" id="drawer-close">✕</button>
-    </div>
+    <div class="drawer-header"><span class="drawer-title">🏢 업체 선택</span><button class="drawer-close" id="drawer-close">✕</button></div>
     <div class="company-list" id="drawer-company-list"></div>
     <div class="company-add-row">
       <input class="company-add-input" id="d-name" placeholder="업체명"/>
@@ -339,9 +334,7 @@ td.editing{background:#0a0e1a}
   </div>
 
   <header class="app-header">
-    <div class="app-header-left">
-      <span style="font-size:18px">🏦</span><span class="app-title">대출 관리 시스템</span>
-    </div>
+    <div class="app-header-left"><span style="font-size:18px">🏦</span><span class="app-title">대출 관리 시스템</span></div>
     <div class="app-header-right">
       <span class="user-email" id="user-email"></span>
       <span id="my-nickname-badge" style="color:#7c9ef8;font-size:11px;background:#1a2050;border:1px solid #2a3060;border-radius:4px;padding:2px 8px;cursor:pointer" title="클릭하면 이름 변경"></span>
@@ -388,7 +381,6 @@ td.editing{background:#0a0e1a}
       </div>
       <div class="col-resizer" data-target="col-loans"></div>
 
-      <!-- 진행건 -->
       <div class="col col-shared" id="col-progress">
         <div class="col-header">
           <span class="col-title">📌 진행건</span>
@@ -423,7 +415,6 @@ td.editing{background:#0a0e1a}
 
       <div class="col-resizer" data-target="col-progress"></div>
 
-      <!-- 지점접수현황 -->
       <div class="col col-shared" id="col-notice">
         <div class="col-header">
           <span class="col-title">📋 지점접수현황</span>
@@ -614,8 +605,7 @@ function initNickname(){
   const saved=localStorage.getItem("lms_nickname");
   if(saved){myNickname=saved;return Promise.resolve();}
   return new Promise(resolve=>{
-    const overlay=$("nickname-overlay");
-    const input=$("nickname-input");
+    const overlay=$("nickname-overlay"),input=$("nickname-input");
     overlay.classList.remove("hidden");
     setTimeout(()=>input.focus(),100);
     const confirm=()=>{
@@ -637,7 +627,7 @@ document.querySelectorAll(".main-tab").forEach(btn=>{
     document.querySelectorAll(".main-tab").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
     const t=btn.dataset.tab;
-    ["loan","product","stats","dsr"].forEach(id=>$(("tab-"+id)).classList.toggle("hidden",t!==id));
+    ["loan","product","stats","dsr"].forEach(id=>$("tab-"+id).classList.toggle("hidden",t!==id));
   });
 });
 
@@ -661,21 +651,17 @@ onAuthStateChanged(auth,async user=>{
     $("app").classList.remove("hidden");
     $("user-email").textContent=user.email;
     await initNickname();
-    // 헤더에 내 이름 표시
     const badge=$("my-nickname-badge");
     if(badge){
       badge.textContent="👤 "+myNickname;
       badge.addEventListener("click",()=>{
-        localStorage.removeItem("lms_nickname");
-        myNickname="";
+        localStorage.removeItem("lms_nickname");myNickname="";
         initNickname().then(()=>{badge.textContent="👤 "+myNickname;});
       });
     }
     initData();
   }else{
-    currentUser=null;
-    $("app").classList.add("hidden");
-    $("login-page").classList.remove("hidden");
+    currentUser=null;$("app").classList.add("hidden");$("login-page").classList.remove("hidden");
     if(loansUnsub)loansUnsub();
   }
 });
@@ -688,17 +674,14 @@ async function migrateSharedData(){
     for(const key of["progress","notice"]){
       const oldDoc=await getDoc(doc(db,"shared",key));
       if(!oldDoc.exists())continue;
-      const html=oldDoc.data().html||"";
-      if(!html.trim())continue;
-      const tempDiv=document.createElement("div");
-      tempDiv.innerHTML=html;
+      const html=oldDoc.data().html||"";if(!html.trim())continue;
+      const tempDiv=document.createElement("div");tempDiv.innerHTML=html;
       const blocks=tempDiv.querySelectorAll(":scope > div, :scope > p");
       let lines=blocks.length>0?[...blocks].map(b=>b.innerHTML||""):html.split(/<br\s*\/?>/i).map(l=>l.trim()).filter(l=>l!=="");
       if(!lines.length)lines=[html];
       await Promise.all(lines.map((lineHtml,i)=>setDoc(doc(db,`shared_lines_${key}`,`line_${i}`),{html:lineHtml,idx:i,updatedBy:"migration",updatedAt:new Date().toISOString()})));
     }
     await setDoc(doc(db,"settings","migration_done"),{shared_lines:true,migratedAt:new Date().toISOString()},{merge:true});
-    console.log("마이그레이션 완료!");
   }catch(e){console.error("마이그레이션 실패:",e);}
 }
 
@@ -706,11 +689,8 @@ function initData(){
   migrateSharedData();
   onSnapshot(doc(db,"settings","telegram_ids"),snap=>{if(!snap.exists())return;companies=snap.data();renderCompanies();});
   onSnapshot(collection(db,"loans"),snap=>{allLoans=snap.docs.map(d=>({id:d.id,...d.data()}));renderCompanies();if($("search-input")&&$("search-input").value.trim())renderLoans();});
-
-  // ★ onSnapshot 하나씩만 등록
   initLineEditor("progress-editor","progress-search","progress","progress-save-indicator","progress-typing");
   initLineEditor("notice-editor","notice-search","notice","notice-save-indicator","notice-typing");
-
   onSnapshot(collection(db,"products"),snap=>{products=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));renderProductList();});
   initWeeklyStats();initStatsEdit();initDrawer();initLoanInnerTabs();initResizers();
   $("add-btn").addEventListener("click",addCustomer);
@@ -723,7 +703,7 @@ function initData(){
 }
 
 // ══════════════════════════════════════════
-// ★ 줄 단위 에디터 - onSnapshot 하나만, 첫 로드는 innerHTML 통째로 교체
+// 줄 단위 에디터
 // ══════════════════════════════════════════
 function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
   const editor=$(editorId);
@@ -733,13 +713,12 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
 
   let saveTimers={};
   let savingLines={};
-  let lastSavedLines={};
+  let lastSavedLines={};   // { "line_0": html, ... }
   let isApplying=false;
-  let initialLoadDone=false;  // ★ 첫 로드 여부
+  let initialLoadDone=false;
   let typingTimer=null;
   let typingClearTimer=null;
 
-  // 저장 상태 표시
   function showIndicator(state){
     if(!indicator)return;
     indicator.className="save-indicator "+state;
@@ -749,7 +728,6 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
     else if(state==="conflict")indicator.textContent="⚠ 충돌";
   }
 
-  // 입력 중 표시
   function showTyping(name){
     if(!typingEl||!name)return;
     typingEl.innerHTML=`✏ <span class="typing-dot">●</span> ${name}님이 입력 중...`;
@@ -758,7 +736,6 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
     typingClearTimer=setTimeout(()=>typingEl.classList.add("hidden"),5000);
   }
 
-  // 내가 입력 중임을 Firestore에 알림
   function broadcastTyping(){
     clearTimeout(typingTimer);
     typingTimer=setTimeout(async()=>{
@@ -777,22 +754,31 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
     showTyping(data.name);
   });
 
-  // ★ Firestore 실시간 수신 - onSnapshot 딱 하나
+  // ★ Firestore 수신 - onSnapshot 딱 하나
   onSnapshot(collection(db,`shared_lines_${dbKey}`),snap=>{
     if(isApplying)return;
-    // 내가 저장 중인 줄이 있으면 건드리지 않음
     if(Object.values(savingLines).some(v=>v))return;
 
     const serverDocs=snap.docs
       .map(d=>({key:d.id,idx:d.data().idx??parseInt(d.id.replace("line_","")),html:d.data().html||""}))
       .sort((a,b)=>a.idx-b.idx);
 
-    if(!serverDocs.length)return;
+    if(!serverDocs.length){
+      // 서버에 줄이 없으면 = 전체 삭제됨
+      if(initialLoadDone && editor.innerHTML!==""){
+        isApplying=true;
+        editor.innerHTML="";
+        lastSavedLines={};
+        isApplying=false;
+      }
+      initialLoadDone=true;
+      return;
+    }
 
     isApplying=true;
 
     if(!initialLoadDone){
-      // ★ 첫 로드: 에디터를 통째로 교체 → 중복 삽입 원천 차단
+      // ★ 첫 로드: 통째로 교체 → 중복 삽입 원천 차단
       editor.innerHTML=serverDocs.map(({html})=>`<div>${html}</div>`).join("");
       serverDocs.forEach(({key,html})=>{lastSavedLines[key]=html;});
       initialLoadDone=true;
@@ -816,11 +802,40 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
     isApplying=false;
   });
 
-  // 입력 감지 → 입력 중 알림 + 줄 저장
+  // ★ 입력 감지
   editor.addEventListener("input",()=>{
     if(isApplying)return;
     broadcastTyping();
 
+    // ★ 에디터가 완전히 비었을 때 (전체 삭제)
+    const isEmpty=editor.innerHTML===""||editor.innerHTML==="<br>";
+    if(isEmpty){
+      const existingKeys=Object.keys(lastSavedLines);
+      if(existingKeys.length>0){
+        showIndicator("saving");
+        clearTimeout(saveTimers["__clear__"]);
+        saveTimers["__clear__"]=setTimeout(async()=>{
+          try{
+            // line_0 은 빈 내용으로 저장, 나머지는 삭제
+            await setDoc(
+              doc(db,`shared_lines_${dbKey}`,"line_0"),
+              {html:"",idx:0,updatedBy:myNickname,updatedAt:new Date().toISOString()},
+              {merge:true}
+            );
+            const deleteKeys=existingKeys.filter(k=>k!=="line_0");
+            await Promise.all(deleteKeys.map(k=>deleteDoc(doc(db,`shared_lines_${dbKey}`,k))));
+            lastSavedLines={"line_0":""};
+            showIndicator("saved");
+          }catch(e){
+            console.error("전체 삭제 저장 실패:",e);
+            showIndicator("conflict");
+          }
+        },600);
+      }
+      return;
+    }
+
+    // 일반 줄 저장
     const blocks=editor.querySelectorAll(":scope > div, :scope > p");
     const lineArr=blocks.length>0?[...blocks]:[editor];
 
@@ -835,7 +850,11 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
       saveTimers[key]=setTimeout(async()=>{
         savingLines[key]=true;
         try{
-          await setDoc(doc(db,`shared_lines_${dbKey}`,key),{html,idx:i,updatedBy:myNickname,updatedAt:new Date().toISOString()},{merge:true});
+          await setDoc(
+            doc(db,`shared_lines_${dbKey}`,key),
+            {html,idx:i,updatedBy:myNickname,updatedAt:new Date().toISOString()},
+            {merge:true}
+          );
           lastSavedLines[key]=html;
           showIndicator("saved");
         }catch(e){
@@ -859,7 +878,7 @@ function initLineEditor(editorId,searchId,dbKey,indicatorId,typingId){
     e.clipboardData.setData("text/plain",editorSelectionToText(sel));
   });
 
-  // 검색/하이라이트
+  // 검색
   const searchEl=$(searchId);
   if(searchEl){
     searchEl.addEventListener("keydown",e=>{
@@ -882,16 +901,15 @@ window.ctxFormat=(cmd)=>{hideCtxMenu();restoreSelection();document.execCommand(c
 window.ctxColor=(color)=>{hideCtxMenu();restoreSelection();document.execCommand("foreColor",false,color);const ae=document.activeElement.closest(".rich-editor");if(ae)ae.dispatchEvent(new Event("input"));};
 
 function editorSelectionToText(sel){
-  const frag=sel.getRangeAt(0).cloneContents();
-  const tmp=document.createElement("div");tmp.appendChild(frag);
+  const frag=sel.getRangeAt(0).cloneContents();const tmp=document.createElement("div");tmp.appendChild(frag);
   tmp.querySelectorAll("br").forEach(br=>br.replaceWith("\n"));
   let first=true;tmp.querySelectorAll("div,p").forEach(el=>{if(first){first=false;return;}el.prepend("\n");});
   return(tmp.innerText||tmp.textContent||"").replace(/\n{3,}/g,"\n\n");
 }
 
 function highlightName(editor,kw){
-  const walker=document.createTreeWalker(editor,NodeFilter.SHOW_TEXT);
-  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+  const walker=document.createTreeWalker(editor,NodeFilter.SHOW_TEXT);const nodes=[];
+  while(walker.nextNode())nodes.push(walker.currentNode);
   nodes.forEach(node=>{
     const lines=node.textContent.split("\n");let result="",matched=false;
     lines.forEach((line,i)=>{
@@ -914,8 +932,7 @@ let currentWeekStart=null,weeklyUnsubs=[],statsMode="weekly",currentDayDate=null
 function getWeekStart(date){const d=new Date(date),day=d.getDay(),diff=day===0?-6:1-day;d.setDate(d.getDate()+diff);d.setHours(0,0,0,0);return d;}
 function formatDate(d){return d.toISOString().slice(0,10);}
 function initWeeklyStats(){
-  currentWeekStart=getWeekStart(new Date());currentDayDate=new Date();
-  renderWeekLabel();renderDayLabel();loadWeeklyStats();
+  currentWeekStart=getWeekStart(new Date());currentDayDate=new Date();renderWeekLabel();renderDayLabel();loadWeeklyStats();
   $("stats-mode-weekly").addEventListener("click",()=>{statsMode="weekly";$("stats-mode-weekly").classList.add("active");$("stats-mode-daily").classList.remove("active");$("stats-weekly-ctrl").style.display="flex";$("stats-daily-ctrl").style.display="none";loadWeeklyStats();});
   $("stats-mode-daily").addEventListener("click",()=>{statsMode="daily";$("stats-mode-daily").classList.add("active");$("stats-mode-weekly").classList.remove("active");$("stats-weekly-ctrl").style.display="none";$("stats-daily-ctrl").style.display="flex";loadDailyStats();});
   $("stats-prev").addEventListener("click",()=>{currentWeekStart.setDate(currentWeekStart.getDate()-7);renderWeekLabel();loadWeeklyStats();});
@@ -930,26 +947,16 @@ function loadWeeklyStats(){
   weeklyUnsubs.forEach(u=>u());weeklyUnsubs=[];if(dailyUnsub){dailyUnsub();dailyUnsub=null;}
   const dates=[];for(let i=0;i<5;i++){const d=new Date(currentWeekStart);d.setDate(d.getDate()+i);dates.push(formatDate(d));}
   const weekData={};dates.forEach(d=>weekData[d]=null);
-  const tryMerge=()=>{
-    if(Object.values(weekData).some(v=>v===null))return;
-    const total={total:0,groups:{},progress_req:{},approved_groups:{},rejected_groups:{}};
-    Object.values(weekData).forEach(d=>{if(!d)return;total.total+=(d.total||0);Object.entries(d.groups||{}).forEach(([k,v])=>total.groups[k]=(total.groups[k]||0)+v);Object.entries(d.progress_req||{}).forEach(([k,v])=>total.progress_req[k]=(total.progress_req[k]||0)+v);Object.entries(d.approved_groups||{}).forEach(([k,v])=>total.approved_groups[k]=(total.approved_groups[k]||0)+v);Object.entries(d.rejected_groups||{}).forEach(([k,v])=>total.rejected_groups[k]=(total.rejected_groups[k]||0)+v);});
-    renderStats(total);
-  };
+  const tryMerge=()=>{if(Object.values(weekData).some(v=>v===null))return;const total={total:0,groups:{},progress_req:{},approved_groups:{},rejected_groups:{}};Object.values(weekData).forEach(d=>{if(!d)return;total.total+=(d.total||0);Object.entries(d.groups||{}).forEach(([k,v])=>total.groups[k]=(total.groups[k]||0)+v);Object.entries(d.progress_req||{}).forEach(([k,v])=>total.progress_req[k]=(total.progress_req[k]||0)+v);Object.entries(d.approved_groups||{}).forEach(([k,v])=>total.approved_groups[k]=(total.approved_groups[k]||0)+v);Object.entries(d.rejected_groups||{}).forEach(([k,v])=>total.rejected_groups[k]=(total.rejected_groups[k]||0)+v);});renderStats(total);};
   dates.forEach(dateStr=>{const unsub=onSnapshot(doc(db,"stats",dateStr),snap=>{weekData[dateStr]=snap.exists()?snap.data():{};tryMerge();});weeklyUnsubs.push(unsub);});
 }
 function renderStats(d){
-  currentStatsData=d;
-  const groups=d.groups||{},progReq=d.progress_req||{},approved=d.approved_groups||{},rejected=d.rejected_groups||{};
+  currentStatsData=d;const groups=d.groups||{},progReq=d.progress_req||{},approved=d.approved_groups||{},rejected=d.rejected_groups||{};
   const totalAppr=Object.values(approved).reduce((a,b)=>a+b,0),totalRej=Object.values(rejected).reduce((a,b)=>a+b,0);
   $("s-total").textContent=d.total||0;$("s-appr").textContent=totalAppr;$("s-rej").textContent=totalRej;
   const active=Object.entries(groups).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
   if(!active.length){$("stats-tbody").innerHTML="<tr><td colspan='7' class='stats-empty'>접수 없음</td></tr>";return;}
-  $("stats-tbody").innerHTML=active.map(([g,cnt])=>{
-    const req=progReq[g]||0,appr=approved[g]||0,rej=rejected[g]||0,pct=cnt>0?Math.round(appr/cnt*100):0;
-    if(statsEditMode)return`<tr><td>${esc(g)}</td><td class="num">${cnt}</td><td class="num editing"><input class="stats-edit-input" data-g="${esc(g)}" data-f="progress_req" value="${req}"/></td><td class="num editing"><input class="stats-edit-input" data-g="${esc(g)}" data-f="approved_groups" value="${appr}"/></td><td class="num editing"><input class="stats-edit-input" data-g="${esc(g)}" data-f="rejected_groups" value="${rej}"/></td><td class="num">${pct?pct+"%":"-"}</td><td></td></tr>`;
-    return`<tr><td>${esc(g)}</td><td class="num">${cnt}</td><td class="num">${req}</td><td class="num" style="color:#4caf50">${appr}</td><td class="num" style="color:#ef5350">${rej}</td><td class="num">${pct?pct+"%":"-"}</td><td></td></tr>`;
-  }).join("");
+  $("stats-tbody").innerHTML=active.map(([g,cnt])=>{const req=progReq[g]||0,appr=approved[g]||0,rej=rejected[g]||0,pct=cnt>0?Math.round(appr/cnt*100):0;if(statsEditMode)return`<tr><td>${esc(g)}</td><td class="num">${cnt}</td><td class="num editing"><input class="stats-edit-input" data-g="${esc(g)}" data-f="progress_req" value="${req}"/></td><td class="num editing"><input class="stats-edit-input" data-g="${esc(g)}" data-f="approved_groups" value="${appr}"/></td><td class="num editing"><input class="stats-edit-input" data-g="${esc(g)}" data-f="rejected_groups" value="${rej}"/></td><td class="num">${pct?pct+"%":"-"}</td><td></td></tr>`;return`<tr><td>${esc(g)}</td><td class="num">${cnt}</td><td class="num">${req}</td><td class="num" style="color:#4caf50">${appr}</td><td class="num" style="color:#ef5350">${rej}</td><td class="num">${pct?pct+"%":"-"}</td><td></td></tr>`;}).join("");
 }
 function initStatsEdit(){
   const toggleBtn=$("stats-edit-toggle"),saveRow=$("stats-save-row");
@@ -995,27 +1002,11 @@ function renderLoans(){
 }
 
 function loanItemHtml(loan,draggable=false){
-  return`<div class="loan-item" ${draggable?'draggable="true"':''} data-id="${loan.id}">
-    <div class="loan-view">
-      <div class="loan-header">
-        <div class="customer-info"><div class="customer-name">${esc(loan.customer||"")}</div>${loan.status&&loan.status!=="-"?`<div class="customer-status">${esc(loan.status)}</div>`:""}</div>
-        <div class="loan-actions"><button class="del-btn" data-id="${loan.id}">✕</button></div>
-      </div>
-      ${loan.details?`<div class="loan-details">${esc(loan.details)}</div>`:""}
-    </div>
-    <div class="edit-form hidden" id="ef-${loan.id}">
-      <input class="edit-input" id="ec-${loan.id}" placeholder="고객명" value="${esc(loan.customer||"")}"/>
-      <input class="edit-input" id="es-${loan.id}" placeholder="상태" value="${esc(loan.status||"")}"/>
-      <textarea class="edit-textarea" id="ed-${loan.id}" rows="${Math.max(3,(loan.details||"").split("\n").length+1)}">${esc(loan.details||"")}</textarea>
-      <div class="edit-actions"><button class="save-btn" data-id="${loan.id}">저장</button><button class="cancel-btn">취소</button></div>
-    </div>
-  </div>`;
+  return`<div class="loan-item" ${draggable?'draggable="true"':''} data-id="${loan.id}"><div class="loan-view"><div class="loan-header"><div class="customer-info"><div class="customer-name">${esc(loan.customer||"")}</div>${loan.status&&loan.status!=="-"?`<div class="customer-status">${esc(loan.status)}</div>`:""}</div><div class="loan-actions"><button class="del-btn" data-id="${loan.id}">✕</button></div></div>${loan.details?`<div class="loan-details">${esc(loan.details)}</div>`:""}</div><div class="edit-form hidden" id="ef-${loan.id}"><input class="edit-input" id="ec-${loan.id}" placeholder="고객명" value="${esc(loan.customer||"")}"/><input class="edit-input" id="es-${loan.id}" placeholder="상태" value="${esc(loan.status||"")}"/><textarea class="edit-textarea" id="ed-${loan.id}" rows="${Math.max(3,(loan.details||"").split("\n").length+1)}">${esc(loan.details||"")}</textarea><div class="edit-actions"><button class="save-btn" data-id="${loan.id}">저장</button><button class="cancel-btn">취소</button></div></div></div>`;
 }
 
 function bindLoanEvents(){
-  $("loan-list").querySelectorAll(".loan-view").forEach(view=>{
-    view.addEventListener("click",e=>{if(e.target.closest(".del-btn"))return;const item=view.closest(".loan-item"),id=item.dataset.id;view.classList.add("hidden");$("ef-"+id).classList.remove("hidden");$("ec-"+id).focus();});
-  });
+  $("loan-list").querySelectorAll(".loan-view").forEach(view=>{view.addEventListener("click",e=>{if(e.target.closest(".del-btn"))return;const item=view.closest(".loan-item"),id=item.dataset.id;view.classList.add("hidden");$("ef-"+id).classList.remove("hidden");$("ec-"+id).focus();});});
   $("loan-list").querySelectorAll(".cancel-btn").forEach(btn=>btn.addEventListener("click",()=>{const item=btn.closest(".loan-item");item.querySelector(".loan-view").classList.remove("hidden");item.querySelector(".edit-form").classList.add("hidden");}));
   $("loan-list").querySelectorAll(".save-btn").forEach(btn=>{btn.addEventListener("click",async()=>{const id=btn.dataset.id;await updateDoc(doc(db,"loans",id),{customer:$("ec-"+id).value.trim(),status:$("es-"+id).value.trim(),details:$("ed-"+id).value.trim(),updatedBy:currentUser.email,updatedAt:new Date().toISOString()});});});
   $("loan-list").querySelectorAll(".del-btn").forEach(btn=>{btn.addEventListener("click",async e=>{e.stopPropagation();if(!confirm("삭제할까요?"))return;await deleteDoc(doc(db,"loans",btn.dataset.id));});});
@@ -1033,34 +1024,14 @@ function initDrag(){
 }
 
 async function addCustomer(){const inp=$("add-input"),name=inp.value.trim();if(!name||!selectedCompany)return;try{const ref=doc(collection(db,"loans"));await setDoc(ref,{customer:name,status:"-",details:"",company:selectedCompany,order:loans.length,id:ref.id});inp.value="";}catch(e){alert("추가 실패: "+e.message);}}
+async function shareToTelegram(){if(!selectedCompany)return;const tid=companies[selectedCompany];if(!tid||tid==="0"){alert("텔레그램 ID가 없습니다.");return;}let msg="진행현황\n";loans.forEach(l=>{const txt=[l.customer,l.status,l.details].filter(Boolean).join("\n");if(txt.trim())msg+="\n"+txt+"\n----------------------------------------";});await addDoc(collection(db,"commands"),{chat_id:isNaN(tid)?tid:parseInt(tid),text:msg,status:"pending",timestamp:serverTimestamp()});alert("["+selectedCompany+"] 텔레그램 전송 완료");}
 
-async function shareToTelegram(){
-  if(!selectedCompany)return;const tid=companies[selectedCompany];if(!tid||tid==="0"){alert("텔레그램 ID가 없습니다.");return;}
-  let msg="진행현황\n";loans.forEach(l=>{const txt=[l.customer,l.status,l.details].filter(Boolean).join("\n");if(txt.trim())msg+="\n"+txt+"\n----------------------------------------";});
-  await addDoc(collection(db,"commands"),{chat_id:isNaN(tid)?tid:parseInt(tid),text:msg,status:"pending",timestamp:serverTimestamp()});
-  alert("["+selectedCompany+"] 텔레그램 전송 완료");
-}
-
-function initResizers(){
-  document.querySelectorAll(".col-resizer").forEach(resizer=>{
-    let startX=0,startW=0,targetEl=null;
-    resizer.addEventListener("mousedown",e=>{e.preventDefault();targetEl=document.getElementById(resizer.dataset.target);if(!targetEl)return;startX=e.clientX;startW=targetEl.offsetWidth;resizer.classList.add("dragging");document.body.style.cursor="col-resize";document.body.style.userSelect="none";const onMove=e=>{const newW=Math.max(80,startW+(e.clientX-startX));targetEl.style.width=newW+"px";targetEl.style.flex="none";};const onUp=()=>{resizer.classList.remove("dragging");document.body.style.cursor="";document.body.style.userSelect="";document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp);};document.addEventListener("mousemove",onMove);document.addEventListener("mouseup",onUp);});
-  });
-}
-
+function initResizers(){document.querySelectorAll(".col-resizer").forEach(resizer=>{let startX=0,startW=0,targetEl=null;resizer.addEventListener("mousedown",e=>{e.preventDefault();targetEl=document.getElementById(resizer.dataset.target);if(!targetEl)return;startX=e.clientX;startW=targetEl.offsetWidth;resizer.classList.add("dragging");document.body.style.cursor="col-resize";document.body.style.userSelect="none";const onMove=e=>{const newW=Math.max(80,startW+(e.clientX-startX));targetEl.style.width=newW+"px";targetEl.style.flex="none";};const onUp=()=>{resizer.classList.remove("dragging");document.body.style.cursor="";document.body.style.userSelect="";document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp);};document.addEventListener("mousemove",onMove);document.addEventListener("mouseup",onUp);});});}
 function openDrawer(){$("company-drawer").classList.add("open");$("drawer-overlay").classList.add("open");}
 function closeDrawer(){$("company-drawer").classList.remove("open");$("drawer-overlay").classList.remove("open");}
-function initDrawer(){
-  $("hamburger-btn").addEventListener("click",openDrawer);$("drawer-close").addEventListener("click",closeDrawer);$("drawer-overlay").addEventListener("click",closeDrawer);
-  $("d-add-btn").addEventListener("click",async()=>{const name=$("d-name").value.trim(),tid=$("d-tid").value.trim();if(!name)return;try{await setDoc(doc(db,"settings","telegram_ids"),{[name]:tid||"0"},{merge:true});$("d-name").value="";$("d-tid").value="";}catch(e){alert("추가 실패: "+e.message);}});
-}
-
+function initDrawer(){$("hamburger-btn").addEventListener("click",openDrawer);$("drawer-close").addEventListener("click",closeDrawer);$("drawer-overlay").addEventListener("click",closeDrawer);$("d-add-btn").addEventListener("click",async()=>{const name=$("d-name").value.trim(),tid=$("d-tid").value.trim();if(!name)return;try{await setDoc(doc(db,"settings","telegram_ids"),{[name]:tid||"0"},{merge:true});$("d-name").value="";$("d-tid").value="";}catch(e){alert("추가 실패: "+e.message);}});}
 function switchLoanInnerTab(panelId){["col-loans","col-progress","col-notice"].forEach(id=>{const el=$(id);if(el)el.classList.remove("mob-active");});const target=$(panelId);if(target)target.classList.add("mob-active");document.querySelectorAll(".loan-inner-tab").forEach(btn=>btn.classList.toggle("active",btn.dataset.panel===panelId));}
-function initLoanInnerTabs(){
-  if(window.innerWidth<=700)switchLoanInnerTab("col-loans");
-  document.querySelectorAll(".loan-inner-tab").forEach(btn=>btn.addEventListener("click",()=>switchLoanInnerTab(btn.dataset.panel)));
-  window.addEventListener("resize",()=>{if(window.innerWidth>700){["col-loans","col-progress","col-notice"].forEach(id=>{const el=$(id);if(el)el.classList.remove("mob-active");});}else{const active=document.querySelector(".loan-inner-tab.active");if(active)switchLoanInnerTab(active.dataset.panel);}});
-}
+function initLoanInnerTabs(){if(window.innerWidth<=700)switchLoanInnerTab("col-loans");document.querySelectorAll(".loan-inner-tab").forEach(btn=>btn.addEventListener("click",()=>switchLoanInnerTab(btn.dataset.panel)));window.addEventListener("resize",()=>{if(window.innerWidth>700){["col-loans","col-progress","col-notice"].forEach(id=>{const el=$(id);if(el)el.classList.remove("mob-active");});}else{const active=document.querySelector(".loan-inner-tab.active");if(active)switchLoanInnerTab(active.dataset.panel);}});}
 
 // ── 상품관리 ──
 const SIDO_ALIAS={"서울":"서울특별시","경기":"경기도","인천":"인천광역시","부산":"부산광역시","대구":"대구광역시","광주":"광주광역시","대전":"대전광역시","울산":"울산광역시","세종":"세종특별자치시","강원":"강원특별자치도","충북":"충청북도","충남":"충청남도","전북":"전라북도","전남":"전라남도","경북":"경상북도","경남":"경상남도","제주":"제주특별자치도"};
@@ -1070,23 +1041,10 @@ const REGIONS={"서울특별시":["강남구","강동구","강북구","강서구
 
 function normalizeRegion(r){const s=String(r||"").trim();if(SIDO_FULL2SHORT[s])return SIDO_FULL2SHORT[s];for(const[full,short]of Object.entries(SIDO_FULL2SHORT)){if(s.startsWith(full))return s.replace(full,short);}return s;}
 function getSearchText(p){const normalized=(p.regions||[]).map(normalizeRegion);const expanded=[...normalized];normalized.forEach(r=>{if(SIDO_ALIAS[r])expanded.push(SIDO_ALIAS[r]);if(r==="전국")SIDO_SHORT_LIST.forEach(s=>expanded.push(s));});return[p.name,p.product,...expanded,...(p.building_types||[]),p.ltv,p.rate,p.junior_rank,p.junior_note,p.individual,p.business,p.memo,p.seonmalso?"선말소":"",p.tenant?"세입자":"",p.eviction_fund?"퇴거":"",p.mci?"MCI":""].join(" ").toLowerCase();}
-function renderProductList(){
-  const raw=$("product-search").value.trim().toLowerCase();const kws=raw.split(/[\s,]+/).filter(Boolean);
-  const filtered=kws.length?products.filter(p=>{const t=getSearchText(p);return kws.every(k=>{const normK=normalizeRegion(k).toLowerCase();const fullK=(SIDO_ALIAS[k]||"").toLowerCase();const shortK=(SIDO_FULL2SHORT[k]||"").toLowerCase();return t.includes(k)||t.includes(normK)||(fullK&&t.includes(fullK))||(shortK&&t.includes(shortK));});}):products;
-  $("product-count").textContent=filtered.length+"개";
-  $("product-list").innerHTML=filtered.map(p=>{const stopped=(p.product||"").includes("[중단]");const dispRegions=(p.regions||[]).map(normalizeRegion);return`<div class="product-item${selectedProduct?.id===p.id?" active":""}" data-id="${p.id}"><div class="product-name-row">${stopped?`<span class='stop-dot'>●</span>`:""}<span style="color:${stopped?"#ef5350":"#e8eaf0"}">${esc(p.name)}</span></div><div class="product-sub">${dispRegions.slice(0,3).map(r=>esc(r)).join(", ")}${dispRegions.length>3?"...":""}</div></div>`;}).join("")||"<div style='color:#3a4060;padding:20px;text-align:center;font-size:12px'>검색 결과 없음</div>";
-  $("product-list").querySelectorAll(".product-item").forEach(el=>{el.addEventListener("click",()=>{selectedProduct=products.find(p=>p.id===el.dataset.id);renderProductList();renderProductDetail(selectedProduct);});});
-}
-function renderProductDetail(p){
-  if(!p)return;const stopped=(p.product||"").includes("[중단]");const tag=(text,cls="")=>`<span class="tag ${cls}">${esc(text)}</span>`;
-  $("product-detail").innerHTML=`${stopped?`<div class='detail-stop'>🚫 중단된 상품</div>`:""}<h2 class="detail-name">${esc(p.name)}</h2>${p.product?`<div class="detail-product-lbl">${esc((p.product||"").replace(" [중단]",""))}</div>`:""}<div class="detail-btn-row"><button class="detail-edit-btn" data-id="${p.id}">✏ 수정</button><button class="detail-del-btn" data-id="${p.id}">🗑 삭제</button></div><hr class="detail-sep"/>${(p.regions||[]).length?`<div class="d-field"><div class="d-label">가능 지역</div><div class="d-region">${p.regions.map(r=>esc(normalizeRegion(r))).join(", ")}</div></div>`:""} ${(p.building_types||[]).length?`<div class="d-field"><div class="d-label">건물 유형</div><div>${p.building_types.map(b=>tag(b)).join("")}</div></div>`:""}<div class="d-grid">${p.ltv?`<div class="d-field"><div class="d-label">LTV</div><div class="d-val">${esc(p.ltv)}</div></div>`:""} ${p.rate?`<div class="d-field"><div class="d-label">금리</div><div class="d-val">${esc(p.rate)}</div></div>`:""}</div><div class="d-field"><div class="d-label">후순위</div>${tag(p.junior_rank||"불가",p.junior_rank==="불가"?"red":"green")} ${p.junior_note?`<span style="color:#9aa5c4;font-size:11px;margin-left:5px">${esc(p.junior_note)}</span>`:""}</div><div class="d-field"><div class="d-label">가능 여부</div>${[["선말소","seonmalso"],["세입자 물건지","tenant"],["퇴거자금","eviction_fund"],["MCI","mci"]].map(([l,k])=>tag((p[k]?"✓ ":"✗ ")+l,p[k]?"green":"red")).join("")}</div><div class="d-grid">${p.individual?`<div class="d-field"><div class="d-label">가계/동일인</div><div class="d-val">${esc(p.individual)}</div></div>`:""} ${p.business?`<div class="d-field"><div class="d-label">사업자</div><div class="d-val">${esc(p.business)}</div></div>`:""} ${p.purpose?`<div class="d-field"><div class="d-label">용도</div><div class="d-val">${esc(p.purpose)}</div></div>`:""}</div>${p.memo?`<div class="d-field"><div class="d-label">메모</div><div class="d-val" style="color:#9aa5c4">${esc(p.memo)}</div></div>`:""}`;
-  $("product-detail").querySelector(".detail-edit-btn").addEventListener("click",()=>showProductForm(p.id));
-  $("product-detail").querySelector(".detail-del-btn").addEventListener("click",async()=>{if(!confirm("삭제할까요?"))return;await deleteDoc(doc(db,"products",p.id));selectedProduct=null;$("product-detail").innerHTML="<div class='product-placeholder'>← 상품을 선택하세요</div>";});
-}
+function renderProductList(){const raw=$("product-search").value.trim().toLowerCase();const kws=raw.split(/[\s,]+/).filter(Boolean);const filtered=kws.length?products.filter(p=>{const t=getSearchText(p);return kws.every(k=>{const normK=normalizeRegion(k).toLowerCase();const fullK=(SIDO_ALIAS[k]||"").toLowerCase();const shortK=(SIDO_FULL2SHORT[k]||"").toLowerCase();return t.includes(k)||t.includes(normK)||(fullK&&t.includes(fullK))||(shortK&&t.includes(shortK));});}):products;$("product-count").textContent=filtered.length+"개";$("product-list").innerHTML=filtered.map(p=>{const stopped=(p.product||"").includes("[중단]");const dispRegions=(p.regions||[]).map(normalizeRegion);return`<div class="product-item${selectedProduct?.id===p.id?" active":""}" data-id="${p.id}"><div class="product-name-row">${stopped?`<span class='stop-dot'>●</span>`:""}<span style="color:${stopped?"#ef5350":"#e8eaf0"}">${esc(p.name)}</span></div><div class="product-sub">${dispRegions.slice(0,3).map(r=>esc(r)).join(", ")}${dispRegions.length>3?"...":""}</div></div>`;}).join("")||"<div style='color:#3a4060;padding:20px;text-align:center;font-size:12px'>검색 결과 없음</div>";$("product-list").querySelectorAll(".product-item").forEach(el=>{el.addEventListener("click",()=>{selectedProduct=products.find(p=>p.id===el.dataset.id);renderProductList();renderProductDetail(selectedProduct);});});}
+function renderProductDetail(p){if(!p)return;const stopped=(p.product||"").includes("[중단]");const tag=(text,cls="")=>`<span class="tag ${cls}">${esc(text)}</span>`;$("product-detail").innerHTML=`${stopped?`<div class='detail-stop'>🚫 중단된 상품</div>`:""}<h2 class="detail-name">${esc(p.name)}</h2>${p.product?`<div class="detail-product-lbl">${esc((p.product||"").replace(" [중단]",""))}</div>`:""}<div class="detail-btn-row"><button class="detail-edit-btn" data-id="${p.id}">✏ 수정</button><button class="detail-del-btn" data-id="${p.id}">🗑 삭제</button></div><hr class="detail-sep"/>${(p.regions||[]).length?`<div class="d-field"><div class="d-label">가능 지역</div><div class="d-region">${p.regions.map(r=>esc(normalizeRegion(r))).join(", ")}</div></div>`:""} ${(p.building_types||[]).length?`<div class="d-field"><div class="d-label">건물 유형</div><div>${p.building_types.map(b=>tag(b)).join("")}</div></div>`:""}<div class="d-grid">${p.ltv?`<div class="d-field"><div class="d-label">LTV</div><div class="d-val">${esc(p.ltv)}</div></div>`:""} ${p.rate?`<div class="d-field"><div class="d-label">금리</div><div class="d-val">${esc(p.rate)}</div></div>`:""}</div><div class="d-field"><div class="d-label">후순위</div>${tag(p.junior_rank||"불가",p.junior_rank==="불가"?"red":"green")} ${p.junior_note?`<span style="color:#9aa5c4;font-size:11px;margin-left:5px">${esc(p.junior_note)}</span>`:""}</div><div class="d-field"><div class="d-label">가능 여부</div>${[["선말소","seonmalso"],["세입자 물건지","tenant"],["퇴거자금","eviction_fund"],["MCI","mci"]].map(([l,k])=>tag((p[k]?"✓ ":"✗ ")+l,p[k]?"green":"red")).join("")}</div><div class="d-grid">${p.individual?`<div class="d-field"><div class="d-label">가계/동일인</div><div class="d-val">${esc(p.individual)}</div></div>`:""} ${p.business?`<div class="d-field"><div class="d-label">사업자</div><div class="d-val">${esc(p.business)}</div></div>`:""} ${p.purpose?`<div class="d-field"><div class="d-label">용도</div><div class="d-val">${esc(p.purpose)}</div></div>`:""}</div>${p.memo?`<div class="d-field"><div class="d-label">메모</div><div class="d-val" style="color:#9aa5c4">${esc(p.memo)}</div></div>`:""}`;$("product-detail").querySelector(".detail-edit-btn").addEventListener("click",()=>showProductForm(p.id));$("product-detail").querySelector(".detail-del-btn").addEventListener("click",async()=>{if(!confirm("삭제할까요?"))return;await deleteDoc(doc(db,"products",p.id));selectedProduct=null;$("product-detail").innerHTML="<div class='product-placeholder'>← 상품을 선택하세요</div>";});}
 function showProductForm(id){const p=id?products.find(x=>x.id===id):null;formData=p?JSON.parse(JSON.stringify(p)):{name:"",product:"컨비",regions:[],building_types:[],ltv:"",rate:"",junior_rank:"불가",junior_note:"",seonmalso:false,tenant:false,eviction_fund:false,mci:false,individual:"",business:"",purpose:"",memo:""};activeSido=Object.keys(REGIONS)[0];$("product-main-view").style.display="none";$("product-form-view").classList.remove("hidden");renderForm(id);}
-function renderForm(id){
-  const f=formData;
-  $("product-form-view").innerHTML=`<div class="form-header"><div class="form-title">${id?"상품 수정":"상품 등록"}</div><div style="display:flex;gap:7px"><button class="form-cancel-btn" id="f-cancel">취소</button><button class="form-save-btn" id="f-save">저장</button></div></div><div class="form-body"><div class="f-section"><div class="f-section-title">기본 정보</div><div class="f-row"><label class="f-label">지점명 *</label><input class="f-input" id="f-name" value="${esc(f.name||"")}"/></div><div class="f-row"><label class="f-label">상품명</label><input class="f-input" id="f-product" value="${esc(f.product||"")}"/></div></div><div class="f-section"><div class="f-section-title">가능 지역</div><div class="region-wrap"><div class="sido-list" id="sido-list"><button class="sido-btn${activeSido==="전국"?" active":""}" data-sido="전국" style="color:${formData.regions.includes("전국")?"#4caf50":""}">🌐 전국</button>${SIDO_SHORT_LIST.map(s=>`<button class="sido-btn${s===activeSido?" active":""}" data-sido="${s}">${s}</button>`).join("")}</div><div class="gu-wrap"><div class="gu-ctrl"><span class="gu-ctrl-title" id="gu-title">${activeSido}</span><button class="small-btn" id="gu-all">전체선택</button><button class="small-btn gray" id="gu-none">전체해제</button></div><div class="gu-grid" id="gu-grid">${renderGuGrid()}</div></div></div></div><div class="f-section"><div class="f-section-title">건물 유형</div><div class="bldg-wrap" id="bldg-wrap">${["아파트","빌라","오피스텔","단독","다가구","상가","연립","다세대","토지"].map(b=>{const on=(f.building_types||[]).includes(b);return`<label class="cb-wrap${on?" on":""}" data-bldg="${b}"><input type="checkbox" ${on?"checked":""}> ${b}</label>`;}).join("")}</div></div><div class="f-section"><div class="f-section-title">LTV / 금리</div><div class="f-row"><label class="f-label">LTV</label><input class="f-input" id="f-ltv" value="${esc(f.ltv||"")}"/></div><div class="f-row"><label class="f-label">금리</label><input class="f-input" id="f-rate" value="${esc(f.rate||"")}"/></div></div><div class="f-section"><div class="f-section-title">후순위</div><div class="f-row"><label class="f-label">가능범위</label><select class="f-select" id="f-jr">${["불가","2순위","3순위 이상","순위 무관"].map(v=>`<option${v===f.junior_rank?" selected":""}>${v}</option>`).join("")}</select></div><div class="f-row"><label class="f-label">조건</label><input class="f-input" id="f-jn" value="${esc(f.junior_note||"")}"/></div></div><div class="f-section"><div class="f-section-title">가능 여부</div><div class="yn-wrap">${[["선말소","seonmalso"],["세입자 물건지","tenant"],["퇴거자금","eviction_fund"],["MCI","mci"]].map(([l,k])=>`<label class="cb-wrap${f[k]?" on":""}" data-yn="${k}"><input type="checkbox" ${f[k]?"checked":""}> ${l}</label>`).join("")}</div></div><div class="f-section"><div class="f-section-title">대출 대상</div><div class="f-row"><label class="f-label">가계/동일인</label><input class="f-input" id="f-individual" value="${esc(f.individual||"")}"/></div><div class="f-row"><label class="f-label">사업자</label><input class="f-input" id="f-business" value="${esc(f.business||"")}"/></div><div class="f-row"><label class="f-label">용도</label><input class="f-input" id="f-purpose" value="${esc(f.purpose||"")}"/></div></div><div class="f-section"><div class="f-section-title">메모</div><textarea class="f-input" id="f-memo" style="height:65px;resize:vertical">${esc(f.memo||"")}</textarea></div></div>`;
+function renderForm(id){const f=formData;$("product-form-view").innerHTML=`<div class="form-header"><div class="form-title">${id?"상품 수정":"상품 등록"}</div><div style="display:flex;gap:7px"><button class="form-cancel-btn" id="f-cancel">취소</button><button class="form-save-btn" id="f-save">저장</button></div></div><div class="form-body"><div class="f-section"><div class="f-section-title">기본 정보</div><div class="f-row"><label class="f-label">지점명 *</label><input class="f-input" id="f-name" value="${esc(f.name||"")}"/></div><div class="f-row"><label class="f-label">상품명</label><input class="f-input" id="f-product" value="${esc(f.product||"")}"/></div></div><div class="f-section"><div class="f-section-title">가능 지역</div><div class="region-wrap"><div class="sido-list" id="sido-list"><button class="sido-btn${activeSido==="전국"?" active":""}" data-sido="전국" style="color:${formData.regions.includes("전국")?"#4caf50":""}">🌐 전국</button>${SIDO_SHORT_LIST.map(s=>`<button class="sido-btn${s===activeSido?" active":""}" data-sido="${s}">${s}</button>`).join("")}</div><div class="gu-wrap"><div class="gu-ctrl"><span class="gu-ctrl-title" id="gu-title">${activeSido}</span><button class="small-btn" id="gu-all">전체선택</button><button class="small-btn gray" id="gu-none">전체해제</button></div><div class="gu-grid" id="gu-grid">${renderGuGrid()}</div></div></div></div><div class="f-section"><div class="f-section-title">건물 유형</div><div class="bldg-wrap" id="bldg-wrap">${["아파트","빌라","오피스텔","단독","다가구","상가","연립","다세대","토지"].map(b=>{const on=(f.building_types||[]).includes(b);return`<label class="cb-wrap${on?" on":""}" data-bldg="${b}"><input type="checkbox" ${on?"checked":""}> ${b}</label>`;}).join("")}</div></div><div class="f-section"><div class="f-section-title">LTV / 금리</div><div class="f-row"><label class="f-label">LTV</label><input class="f-input" id="f-ltv" value="${esc(f.ltv||"")}"/></div><div class="f-row"><label class="f-label">금리</label><input class="f-input" id="f-rate" value="${esc(f.rate||"")}"/></div></div><div class="f-section"><div class="f-section-title">후순위</div><div class="f-row"><label class="f-label">가능범위</label><select class="f-select" id="f-jr">${["불가","2순위","3순위 이상","순위 무관"].map(v=>`<option${v===f.junior_rank?" selected":""}>${v}</option>`).join("")}</select></div><div class="f-row"><label class="f-label">조건</label><input class="f-input" id="f-jn" value="${esc(f.junior_note||"")}"/></div></div><div class="f-section"><div class="f-section-title">가능 여부</div><div class="yn-wrap">${[["선말소","seonmalso"],["세입자 물건지","tenant"],["퇴거자금","eviction_fund"],["MCI","mci"]].map(([l,k])=>`<label class="cb-wrap${f[k]?" on":""}" data-yn="${k}"><input type="checkbox" ${f[k]?"checked":""}> ${l}</label>`).join("")}</div></div><div class="f-section"><div class="f-section-title">대출 대상</div><div class="f-row"><label class="f-label">가계/동일인</label><input class="f-input" id="f-individual" value="${esc(f.individual||"")}"/></div><div class="f-row"><label class="f-label">사업자</label><input class="f-input" id="f-business" value="${esc(f.business||"")}"/></div><div class="f-row"><label class="f-label">용도</label><input class="f-input" id="f-purpose" value="${esc(f.purpose||"")}"/></div></div><div class="f-section"><div class="f-section-title">메모</div><textarea class="f-input" id="f-memo" style="height:65px;resize:vertical">${esc(f.memo||"")}</textarea></div></div>`;
   $("sido-list").querySelectorAll(".sido-btn").forEach(btn=>{btn.addEventListener("click",()=>{activeSido=btn.dataset.sido;$("sido-list").querySelectorAll(".sido-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");$("gu-title").textContent=activeSido==="전국"?"전국 (전체 적용)":activeSido;$("gu-grid").innerHTML=renderGuGrid();bindGuEvents();});});
   $("gu-all").addEventListener("click",()=>{if(activeSido==="전국"){if(!formData.regions.includes("전국"))formData.regions.push("전국");formData.regions=["전국"];}else{const fullSido=SIDO_ALIAS[activeSido]||activeSido;(REGIONS[fullSido]||REGIONS[activeSido]||[]).forEach(gu=>{const k=`${activeSido} ${gu}`;if(!formData.regions.includes(k))formData.regions.push(k);});}$("gu-grid").innerHTML=renderGuGrid();bindGuEvents();const jBtn=$("sido-list").querySelector('[data-sido="전국"]');if(jBtn)jBtn.style.color=formData.regions.includes("전국")?"#4caf50":"";});
   $("gu-none").addEventListener("click",()=>{if(activeSido==="전국"){formData.regions=formData.regions.filter(r=>r!=="전국");}else{formData.regions=formData.regions.filter(r=>!r.startsWith(activeSido));}$("gu-grid").innerHTML=renderGuGrid();bindGuEvents();const jBtn=$("sido-list").querySelector('[data-sido="전국"]');if(jBtn)jBtn.style.color=formData.regions.includes("전국")?"#4caf50":"";});
@@ -1104,36 +1062,9 @@ function bindGuEvents(){$("gu-grid").querySelectorAll(".gu-label").forEach(el=>{
   let debtList=[],debtIdCnt=0;
   function calcMonthly(amount,annualRate,termYears,repayType){const P=amount*10000,r=annualRate/100/12,n=termYears*12;if(P<=0||annualRate<=0||n<=0)return 0;if(repayType==="bullet")return P*r;if(repayType==="principal")return(P/n)+P*r;if(r===0)return P/n;return P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);}
   function fmt만원(원){const 만=Math.round(원/10000);if(만>=10000)return(만/10000).toFixed(2)+"억";return 만.toLocaleString()+"만원";}
-  function renderDebtList(){
-    const el=$("dsr-debt-list"),empty=$("dsr-debt-empty");
-    if(!debtList.length){el.innerHTML="";empty.style.display="block";return;}
-    empty.style.display="none";
-    el.innerHTML=debtList.map((d,i)=>{const isCalc=d.mode!=="direct";return`<div class="dsr-loan-item" data-did="${d.id}"><div class="dsr-loan-header"><span class="dsr-loan-badge">부채 ${i+1}</span><div style="display:flex;gap:4px;margin-left:8px"><button class="dsr-mode-btn" data-did="${d.id}" data-mode="calc" style="background:${isCalc?"#4f6ef7":"#252840"};color:${isCalc?"white":"#9aa5c4"};border:none;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer">계산</button><button class="dsr-mode-btn" data-did="${d.id}" data-mode="direct" style="background:${!isCalc?"#4f6ef7":"#252840"};color:${!isCalc?"white":"#9aa5c4"};border:none;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer">직접입력</button></div></div><button class="dsr-loan-del" data-did="${d.id}">✕</button>${isCalc?`<div class="dsr-row"><label class="dsr-label">잔여원금</label><input class="dsr-input" data-f="amount" data-did="${d.id}" type="number" value="${d.amount||""}" placeholder="0" min="0"/><span class="dsr-unit">만원</span></div><div class="dsr-inline-row" style="margin-bottom:9px"><div class="dsr-row" style="margin-bottom:0"><label class="dsr-label">금리</label><input class="dsr-input" data-f="rate" data-did="${d.id}" type="number" value="${d.rate||""}" placeholder="0.0" step="0.1" min="0"/><span class="dsr-unit">%</span></div><div class="dsr-row" style="margin-bottom:0"><label class="dsr-label">잔여기간</label><input class="dsr-input" data-f="term" data-did="${d.id}" type="number" value="${d.term||""}" placeholder="30" min="1"/><span class="dsr-unit">년</span></div></div><div class="dsr-row"><label class="dsr-label">상환방식</label><select class="dsr-select" data-f="type" data-did="${d.id}"><option value="annuity"${d.type==="annuity"?" selected":""}>원리금균등</option><option value="principal"${d.type==="principal"?" selected":""}>원금균등</option><option value="bullet"${d.type==="bullet"?" selected":""}>만기일시</option></select></div>`:`<div class="dsr-row"><label class="dsr-label">월 납입액</label><input class="dsr-input" data-f="monthly" data-did="${d.id}" type="number" value="${d.monthly||""}" placeholder="0" min="0"/><span class="dsr-unit">만원</span></div><div style="color:#3a4060;font-size:11px;padding:2px 0 4px 0">※ 카드론·할부 등 월납입액을 직접 아시는 경우</div>`}</div>`;}).join("");
-    el.querySelectorAll(".dsr-loan-del").forEach(btn=>{btn.addEventListener("click",()=>{debtList=debtList.filter(d=>d.id!==parseInt(btn.dataset.did));renderDebtList();});});
-    el.querySelectorAll(".dsr-mode-btn").forEach(btn=>{btn.addEventListener("click",()=>{const did=parseInt(btn.dataset.did);const debt=debtList.find(d=>d.id===did);if(debt){debt.mode=btn.dataset.mode;renderDebtList();}});});
-    el.querySelectorAll("[data-did][data-f]").forEach(inp=>{inp.addEventListener("input",()=>{const did=parseInt(inp.dataset.did),f=inp.dataset.f;const debt=debtList.find(d=>d.id===did);if(debt)debt[f]=inp.tagName==="SELECT"?inp.value:(parseFloat(inp.value)||0);});});
-  }
+  function renderDebtList(){const el=$("dsr-debt-list"),empty=$("dsr-debt-empty");if(!debtList.length){el.innerHTML="";empty.style.display="block";return;}empty.style.display="none";el.innerHTML=debtList.map((d,i)=>{const isCalc=d.mode!=="direct";return`<div class="dsr-loan-item" data-did="${d.id}"><div class="dsr-loan-header"><span class="dsr-loan-badge">부채 ${i+1}</span><div style="display:flex;gap:4px;margin-left:8px"><button class="dsr-mode-btn" data-did="${d.id}" data-mode="calc" style="background:${isCalc?"#4f6ef7":"#252840"};color:${isCalc?"white":"#9aa5c4"};border:none;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer">계산</button><button class="dsr-mode-btn" data-did="${d.id}" data-mode="direct" style="background:${!isCalc?"#4f6ef7":"#252840"};color:${!isCalc?"white":"#9aa5c4"};border:none;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer">직접입력</button></div></div><button class="dsr-loan-del" data-did="${d.id}">✕</button>${isCalc?`<div class="dsr-row"><label class="dsr-label">잔여원금</label><input class="dsr-input" data-f="amount" data-did="${d.id}" type="number" value="${d.amount||""}" placeholder="0" min="0"/><span class="dsr-unit">만원</span></div><div class="dsr-inline-row" style="margin-bottom:9px"><div class="dsr-row" style="margin-bottom:0"><label class="dsr-label">금리</label><input class="dsr-input" data-f="rate" data-did="${d.id}" type="number" value="${d.rate||""}" placeholder="0.0" step="0.1" min="0"/><span class="dsr-unit">%</span></div><div class="dsr-row" style="margin-bottom:0"><label class="dsr-label">잔여기간</label><input class="dsr-input" data-f="term" data-did="${d.id}" type="number" value="${d.term||""}" placeholder="30" min="1"/><span class="dsr-unit">년</span></div></div><div class="dsr-row"><label class="dsr-label">상환방식</label><select class="dsr-select" data-f="type" data-did="${d.id}"><option value="annuity"${d.type==="annuity"?" selected":""}>원리금균등</option><option value="principal"${d.type==="principal"?" selected":""}>원금균등</option><option value="bullet"${d.type==="bullet"?" selected":""}>만기일시</option></select></div>`:`<div class="dsr-row"><label class="dsr-label">월 납입액</label><input class="dsr-input" data-f="monthly" data-did="${d.id}" type="number" value="${d.monthly||""}" placeholder="0" min="0"/><span class="dsr-unit">만원</span></div><div style="color:#3a4060;font-size:11px;padding:2px 0 4px 0">※ 카드론·할부 등 월납입액을 직접 아시는 경우</div>`}</div>`;}).join("");el.querySelectorAll(".dsr-loan-del").forEach(btn=>{btn.addEventListener("click",()=>{debtList=debtList.filter(d=>d.id!==parseInt(btn.dataset.did));renderDebtList();});});el.querySelectorAll(".dsr-mode-btn").forEach(btn=>{btn.addEventListener("click",()=>{const did=parseInt(btn.dataset.did);const debt=debtList.find(d=>d.id===did);if(debt){debt.mode=btn.dataset.mode;renderDebtList();}});});el.querySelectorAll("[data-did][data-f]").forEach(inp=>{inp.addEventListener("input",()=>{const did=parseInt(inp.dataset.did),f=inp.dataset.f;const debt=debtList.find(d=>d.id===did);if(debt)debt[f]=inp.tagName==="SELECT"?inp.value:(parseFloat(inp.value)||0);});});}
   $("dsr-add-debt").addEventListener("click",()=>{debtList.push({id:++debtIdCnt,mode:"calc",amount:0,rate:0,term:30,type:"annuity",monthly:0});renderDebtList();});
-  $("dsr-calc-btn").addEventListener("click",()=>{
-    const income=parseFloat($("dsr-income").value)||0,incomeRatio=parseFloat($("dsr-income-type").value)||1.0,adjIncome=income*incomeRatio;
-    if(adjIncome<=0){alert("연간 소득을 입력하세요.");$("dsr-income").focus();return;}
-    const newAmount=parseFloat($("dsr-new-amount").value)||0,newRate=parseFloat($("dsr-new-rate").value)||0,newTerm=parseFloat($("dsr-new-term").value)||30,newType=$("dsr-new-type").value;
-    if(newAmount<=0){alert("신청 대출 금액을 입력하세요.");$("dsr-new-amount").focus();return;}
-    if(newRate<=0){alert("신청 대출 금리를 입력하세요.");$("dsr-new-rate").focus();return;}
-    const newMonthly=calcMonthly(newAmount,newRate,newTerm,newType);
-    let debtMonthly=0;for(const d of debtList){if(d.mode==="direct"){debtMonthly+=(d.monthly||0)*10000;}else{if(d.amount>0&&d.rate>0&&d.term>0)debtMonthly+=calcMonthly(d.amount,d.rate,d.term,d.type);}}
-    const totalMonthly=newMonthly+debtMonthly,annualRepay=totalMonthly*12,annualIncome=adjIncome*10000,dsr=annualIncome>0?(annualRepay/annualIncome*100):0;
-    const resultSec=$("dsr-result-section");resultSec.classList.remove("hidden");resultSec.scrollIntoView({behavior:"smooth",block:"nearest"});
-    const dsrEl=$("dsr-res-dsr"),barEl=$("dsr-res-bar"),descEl=$("dsr-res-desc");
-    dsrEl.textContent=dsr.toFixed(1)+"%";$("dsr-res-monthly").textContent=fmt만원(totalMonthly)+"/월";$("dsr-res-income").textContent=fmt만원(annualIncome)+"/년";
-    dsrEl.className="dsr-result-val";barEl.className="dsr-result-bar";barEl.style.width=Math.min(dsr,100).toFixed(1)+"%";
-    let msg="";
-    if(dsr<=40){dsrEl.classList.add("ok");msg=`✅ <strong>은행권·비은행권 모두 통과 가능</strong><br>DSR ${dsr.toFixed(1)}% → 1금융(40%) ✓ 2금융(50%) ✓`;}
-    else if(dsr<=50){dsrEl.classList.add("warn");barEl.classList.add("warn");msg=`⚠️ <strong>비은행권(2금융) 수준</strong><br>DSR ${dsr.toFixed(1)}% → 은행권(40%) 초과, 저축은행·새마을금고 등 검토`;}
-    else{dsrEl.classList.add("over");barEl.classList.add("over");msg=`🚫 <strong>DSR 규제 초과</strong><br>DSR ${dsr.toFixed(1)}% → 1·2금융 모두 초과. 소득 증가 또는 감액·기간 연장 필요`;}
-    const breakdown=[`• 신규 대출 월상환: <strong>${fmt만원(newMonthly)}</strong>`,...(debtMonthly>0?[`• 기존 부채 월납입 합계: <strong>${fmt만원(debtMonthly)}</strong>`]:[]),`• 월 전체 상환 합계: <strong>${fmt만원(totalMonthly)}</strong>`,`• 연 인정소득: <strong>${adjIncome.toLocaleString()}만원</strong>`];
-    descEl.innerHTML=msg+"<br><br>"+breakdown.join("<br>");
-  });
+  $("dsr-calc-btn").addEventListener("click",()=>{const income=parseFloat($("dsr-income").value)||0,incomeRatio=parseFloat($("dsr-income-type").value)||1.0,adjIncome=income*incomeRatio;if(adjIncome<=0){alert("연간 소득을 입력하세요.");$("dsr-income").focus();return;}const newAmount=parseFloat($("dsr-new-amount").value)||0,newRate=parseFloat($("dsr-new-rate").value)||0,newTerm=parseFloat($("dsr-new-term").value)||30,newType=$("dsr-new-type").value;if(newAmount<=0){alert("신청 대출 금액을 입력하세요.");$("dsr-new-amount").focus();return;}if(newRate<=0){alert("신청 대출 금리를 입력하세요.");$("dsr-new-rate").focus();return;}const newMonthly=calcMonthly(newAmount,newRate,newTerm,newType);let debtMonthly=0;for(const d of debtList){if(d.mode==="direct"){debtMonthly+=(d.monthly||0)*10000;}else{if(d.amount>0&&d.rate>0&&d.term>0)debtMonthly+=calcMonthly(d.amount,d.rate,d.term,d.type);}}const totalMonthly=newMonthly+debtMonthly,annualRepay=totalMonthly*12,annualIncome=adjIncome*10000,dsr=annualIncome>0?(annualRepay/annualIncome*100):0;const resultSec=$("dsr-result-section");resultSec.classList.remove("hidden");resultSec.scrollIntoView({behavior:"smooth",block:"nearest"});const dsrEl=$("dsr-res-dsr"),barEl=$("dsr-res-bar"),descEl=$("dsr-res-desc");dsrEl.textContent=dsr.toFixed(1)+"%";$("dsr-res-monthly").textContent=fmt만원(totalMonthly)+"/월";$("dsr-res-income").textContent=fmt만원(annualIncome)+"/년";dsrEl.className="dsr-result-val";barEl.className="dsr-result-bar";barEl.style.width=Math.min(dsr,100).toFixed(1)+"%";let msg="";if(dsr<=40){dsrEl.classList.add("ok");msg=`✅ <strong>은행권·비은행권 모두 통과 가능</strong><br>DSR ${dsr.toFixed(1)}% → 1금융(40%) ✓ 2금융(50%) ✓`;}else if(dsr<=50){dsrEl.classList.add("warn");barEl.classList.add("warn");msg=`⚠️ <strong>비은행권(2금융) 수준</strong><br>DSR ${dsr.toFixed(1)}% → 은행권(40%) 초과, 저축은행·새마을금고 등 검토`;}else{dsrEl.classList.add("over");barEl.classList.add("over");msg=`🚫 <strong>DSR 규제 초과</strong><br>DSR ${dsr.toFixed(1)}% → 1·2금융 모두 초과. 소득 증가 또는 감액·기간 연장 필요`;}const breakdown=[`• 신규 대출 월상환: <strong>${fmt만원(newMonthly)}</strong>`,...(debtMonthly>0?[`• 기존 부채 월납입 합계: <strong>${fmt만원(debtMonthly)}</strong>`]:[]),`• 월 전체 상환 합계: <strong>${fmt만원(totalMonthly)}</strong>`,`• 연 인정소득: <strong>${adjIncome.toLocaleString()}만원</strong>`];descEl.innerHTML=msg+"<br><br>"+breakdown.join("<br>");});
   renderDebtList();
 })();
 
@@ -1141,20 +1072,7 @@ function bindGuEvents(){$("gu-grid").querySelectorAll(".gu-label").forEach(el=>{
 window.ltvAddPrior=function(){const list=document.getElementById("ltv-prior-list");const item=document.createElement("div");item.className="ltv-prior-item";item.style.cssText="display:flex;gap:6px;align-items:center";item.innerHTML=`<input class="dsr-input ltv-prior-input" type="number" placeholder="0" min="0" style="flex:1"/><span class="dsr-unit">만원</span><button onclick="this.closest('.ltv-prior-item').remove()" style="background:#7a1e1e;color:white;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0">✕</button>`;list.appendChild(item);};
 (function initLTV(){
   function fmt만원(v){if(v>=10000)return(v/10000).toFixed(2)+"억";return v.toLocaleString()+"만원";}
-  $("ltv-calc-btn").addEventListener("click",()=>{
-    const price=parseFloat($("ltv-price").value)||0,ratio=parseFloat($("ltv-ratio").value)||0,bangong=parseFloat($("ltv-bangong").value)||0;
-    const rank=document.querySelector("input[name='ltv-rank']:checked")?.value||"선순위";
-    const priorInputs=document.querySelectorAll(".ltv-prior-input");let prior=0;priorInputs.forEach(inp=>{prior+=parseFloat(inp.value)||0;});
-    if(price<=0){alert("KB시세를 입력하세요.");$("ltv-price").focus();return;}if(ratio<=0){alert("LTV 비율을 입력하세요.");$("ltv-ratio").focus();return;}
-    const ltvLimit=Math.floor(price*ratio/100)-bangong,available=rank==="후순위"?ltvLimit-prior:ltvLimit,availableSafe=Math.max(available,0);
-    const resultSec=$("ltv-result-section");resultSec.classList.remove("hidden");resultSec.scrollIntoView({behavior:"smooth",block:"nearest"});
-    $("ltv-res-limit").textContent=ltvLimit>0?fmt만원(ltvLimit):"한도없음";$("ltv-res-available").textContent=availableSafe>0?fmt만원(availableSafe):"한도없음";
-    const barPct=ltvLimit>0?Math.min(availableSafe/ltvLimit*100,100):0;const barEl=$("ltv-res-bar");barEl.style.width=barPct.toFixed(1)+"%";barEl.className="dsr-result-bar";
-    const lines=[`• KB시세: <strong>${fmt만원(price)}</strong>`,`• LTV ${ratio}% 적용: <strong>${fmt만원(Math.floor(price*ratio/100))}</strong>`,`• 방공제 차감: <strong>−${fmt만원(bangong)}</strong>`,`• LTV 기준 한도: <strong>${ltvLimit>0?fmt만원(ltvLimit):"한도없음"}</strong>`];
-    if(rank==="후순위"){priorInputs.forEach((inp,i)=>{const v=parseFloat(inp.value)||0;if(v>0)lines.push(`• ${i+1}순위 선순위: <strong>−${fmt만원(v)}</strong>`);});lines.push(`• 후순위 가용 한도: <strong style="color:#4caf50">${availableSafe>0?fmt만원(availableSafe):"한도없음"}</strong>`);}
-    else{lines.push(`• 선순위 가용 한도: <strong style="color:#4caf50">${availableSafe>0?fmt만원(availableSafe):"한도없음"}</strong>`);}
-    $("ltv-res-desc").innerHTML=lines.join("<br>");
-  });
+  $("ltv-calc-btn").addEventListener("click",()=>{const price=parseFloat($("ltv-price").value)||0,ratio=parseFloat($("ltv-ratio").value)||0,bangong=parseFloat($("ltv-bangong").value)||0;const rank=document.querySelector("input[name='ltv-rank']:checked")?.value||"선순위";const priorInputs=document.querySelectorAll(".ltv-prior-input");let prior=0;priorInputs.forEach(inp=>{prior+=parseFloat(inp.value)||0;});if(price<=0){alert("KB시세를 입력하세요.");$("ltv-price").focus();return;}if(ratio<=0){alert("LTV 비율을 입력하세요.");$("ltv-ratio").focus();return;}const ltvLimit=Math.floor(price*ratio/100)-bangong,available=rank==="후순위"?ltvLimit-prior:ltvLimit,availableSafe=Math.max(available,0);const resultSec=$("ltv-result-section");resultSec.classList.remove("hidden");resultSec.scrollIntoView({behavior:"smooth",block:"nearest"});$("ltv-res-limit").textContent=ltvLimit>0?fmt만원(ltvLimit):"한도없음";$("ltv-res-available").textContent=availableSafe>0?fmt만원(availableSafe):"한도없음";const barPct=ltvLimit>0?Math.min(availableSafe/ltvLimit*100,100):0;const barEl=$("ltv-res-bar");barEl.style.width=barPct.toFixed(1)+"%";barEl.className="dsr-result-bar";const lines=[`• KB시세: <strong>${fmt만원(price)}</strong>`,`• LTV ${ratio}% 적용: <strong>${fmt만원(Math.floor(price*ratio/100))}</strong>`,`• 방공제 차감: <strong>−${fmt만원(bangong)}</strong>`,`• LTV 기준 한도: <strong>${ltvLimit>0?fmt만원(ltvLimit):"한도없음"}</strong>`];if(rank==="후순위"){priorInputs.forEach((inp,i)=>{const v=parseFloat(inp.value)||0;if(v>0)lines.push(`• ${i+1}순위 선순위: <strong>−${fmt만원(v)}</strong>`);});lines.push(`• 후순위 가용 한도: <strong style="color:#4caf50">${availableSafe>0?fmt만원(availableSafe):"한도없음"}</strong>`);}else{lines.push(`• 선순위 가용 한도: <strong style="color:#4caf50">${availableSafe>0?fmt만원(availableSafe):"한도없음"}</strong>`);}$("ltv-res-desc").innerHTML=lines.join("<br>");});
   document.querySelectorAll("input[name='ltv-rank']").forEach(r=>{r.addEventListener("change",()=>{const priorRow=document.getElementById("ltv-prior-row");if(priorRow)priorRow.style.display=r.value==="후순위"?"flex":"none";});});
 })();
 </script>

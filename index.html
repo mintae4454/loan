@@ -841,34 +841,34 @@ function dateDiffDays(dt){
   return Math.round((target-now)/86400000);
 }
 
-// 텍스트에서 날짜 찾기 — MM.DD / N월N일 / 오늘내일모레
+// 텍스트에서 날짜 찾기 — N월N일 / MM.DD / 오늘내일모레
 function findDate(text){
   if(!text)return null;
   const now=new Date();now.setHours(0,0,0,0);
   const year=now.getFullYear();
 
-  // "04.20", "4.20"
-  const m1=text.match(/\b(\d{1,2})\.(\d{2})\b/);
+  // 1순위: "4월22일" or "4월 22일" (띄어쓰기 유무 모두)
+  const m1=text.match(/(\d{1,2})월\s*(\d{1,2})일/);
   if(m1){
-    const mo=parseInt(m1[1])-1,d=parseInt(m1[2]);
+    const dt=new Date(year,parseInt(m1[1])-1,parseInt(m1[2]));
+    if(!isNaN(dt.getTime())){
+      if(dt<now&&(now-dt)>180*86400000)dt.setFullYear(year+1);
+      return{date:dt,label:`${m1[1]}월 ${m1[2]}일`};
+    }
+  }
+  // 2순위: "04.22" — 앞뒤가 숫자/문자가 아닌 것 (% 같은 거 제외)
+  const m2=text.match(/(?<![0-9%])(\d{1,2})\.(\d{2})(?![0-9%])/);
+  if(m2){
+    const mo=parseInt(m2[1])-1,d=parseInt(m2[2]);
     if(mo>=0&&mo<=11&&d>=1&&d<=31){
       const dt=new Date(year,mo,d);
       if(!isNaN(dt.getTime())){
         if(dt<now&&(now-dt)>180*86400000)dt.setFullYear(year+1);
-        return{date:dt,label:`${m1[1]}월 ${m1[2]}일`};
+        return{date:dt,label:`${m2[1]}월 ${m2[2]}일`};
       }
     }
   }
-  // "4월 23일"
-  const m2=text.match(/(\d{1,2})월\s*(\d{1,2})일/);
-  if(m2){
-    const dt=new Date(year,parseInt(m2[1])-1,parseInt(m2[2]));
-    if(!isNaN(dt.getTime())){
-      if(dt<now&&(now-dt)>180*86400000)dt.setFullYear(year+1);
-      return{date:dt,label:`${m2[1]}월 ${m2[2]}일`};
-    }
-  }
-  // 오늘/내일/모레
+  // 3순위: 오늘/내일/모레
   for(const[w,d] of[["오늘",0],["내일",1],["모레",2]]){
     if(text.includes(w)){
       const dt=new Date(now);dt.setDate(dt.getDate()+d);
@@ -879,6 +879,12 @@ function findDate(text){
 }
 
 // allLoans에서 날짜 파싱해서 알림 생성
+// "장강현(최윤자) [안도준팀장님] - 법인대출" → "장강현"
+function extractMainName(str){
+  const m=(str||"").match(/^([가-힣]{2,6})/);
+  return m?m[1]:(str||"").slice(0,8)||"(이름없음)";
+}
+
 function parseLoansForNotif(){
   const results=[];
   for(const loan of allLoans){
@@ -888,7 +894,7 @@ function parseLoansForNotif(){
     const diff=dateDiffDays(found.date);
     if(diff<0||diff>7)continue;
     results.push({
-      name:loan.customer||"(이름없음)",
+      name:extractMainName(loan.customer),
       company:loan.company||"",
       date:found.date,
       diff,

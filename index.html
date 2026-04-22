@@ -408,6 +408,19 @@ td.editing{background:var(--bg)}
 /* ── 토스트 ── */
 #editor-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--red-muted);color:var(--red);border:1px solid rgba(248,81,73,.2);border-radius:var(--radius);padding:9px 20px;font-size:13px;font-weight:500;z-index:9999;pointer-events:none;opacity:0;transition:opacity .25s;backdrop-filter:blur(8px)}
 
+/* ── 업체 관리 모달 ── */
+.mgmt-col-label{color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;font-family:'JetBrains Mono',monospace}
+.company-mgmt-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-muted)}
+.company-mgmt-row:last-child{border-bottom:none}
+.company-mgmt-input{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:5px 8px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;min-width:0;width:100%}
+.company-mgmt-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-muted)}
+.company-mgmt-save{background:var(--green-muted);color:var(--green);border:1px solid rgba(63,185,80,.2);border-radius:var(--radius);padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.company-mgmt-save:hover{background:var(--green);color:white}
+.company-mgmt-del{background:var(--red-muted);color:var(--red);border:1px solid rgba(248,81,73,.2);border-radius:var(--radius);padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.company-mgmt-del:hover{background:var(--red);color:white}
+.company-mgmt-btn{background:none;border:none;color:var(--text-subtle);cursor:pointer;padding:3px 6px;border-radius:var(--radius);font-size:14px;line-height:1;transition:all .15s;display:flex;align-items:center}
+.company-mgmt-btn:hover{background:var(--bg-3);color:var(--text)}
+
 /* ── 반응형 ── */
 @media(max-width:700px){
   .hamburger-btn{display:flex;align-items:center}
@@ -542,7 +555,7 @@ input[type=radio]{accent-color:var(--accent)}
     </div>
     <div class="loan-layout" id="loan-layout">
       <div class="col col-company" id="col-company">
-        <div class="col-header"><span class="col-title">업체</span></div>
+        <div class="col-header"><span class="col-title">업체</span><button class="company-mgmt-btn" id="company-mgmt-btn" title="업체 관리"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.475l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/></svg></button></div>
         <div class="company-list" id="company-list"></div>
         <div class="company-add-row">
           <input class="company-add-input" id="c-name" placeholder="업체명"/>
@@ -766,12 +779,31 @@ input[type=radio]{accent-color:var(--accent)}
       </div>
     </div>
   </div>
+
+  <!-- ── 업체 관리 모달 ── -->
+  <div class="modal-overlay hidden" id="company-mgmt-modal">
+    <div class="modal-box" style="max-width:500px">
+      <div class="modal-header">
+        <span class="modal-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.475l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/></svg>
+          업체 관리
+        </span>
+        <button class="modal-close" id="company-mgmt-close">✕</button>
+      </div>
+      <div class="modal-body" id="company-mgmt-body" style="padding:14px 16px;max-height:60vh;overflow-y:auto;display:block">
+        <div style="color:var(--text-subtle);text-align:center;padding:24px;font-size:13px">로딩 중...</div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-cancel-btn" id="company-mgmt-done">닫기</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import{getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import{getFirestore,collection,doc,onSnapshot,setDoc,addDoc,updateDoc,deleteDoc,getDoc,getDocs,query,where,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import{getFirestore,collection,doc,onSnapshot,setDoc,addDoc,updateDoc,deleteDoc,getDoc,getDocs,query,where,serverTimestamp,deleteField}from"https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const firebaseConfig={apiKey:"AIzaSyBi-FrJM5RB5nRc0nUz4OFVpqHrw29yY9Q",authDomain:"loan-management-app-9df57.firebaseapp.com",projectId:"loan-management-app-9df57",storageBucket:"loan-management-app-9df57.firebasestorage.app",messagingSenderId:"155998706391",appId:"1:155998706391:web:4982fed24d32c99ad82e92"};
 const app=initializeApp(firebaseConfig);
@@ -798,7 +830,7 @@ onAuthStateChanged(auth,async user=>{$("loading").classList.add("hidden");if(use
 
 async function migrateSharedData(){try{const flagSnap=await getDoc(doc(db,"settings","migration_done"));if(flagSnap.exists()&&flagSnap.data().shared_lines)return;for(const key of["progress","notice"]){const oldDoc=await getDoc(doc(db,"shared",key));if(!oldDoc.exists())continue;const html=oldDoc.data().html||"";if(!html.trim())continue;const tempDiv=document.createElement("div");tempDiv.innerHTML=html;const blocks=tempDiv.querySelectorAll(":scope > div, :scope > p");let lines=blocks.length>0?[...blocks].map(b=>b.innerHTML||""):html.split(/<br\s*\/?>/i).map(l=>l.trim()).filter(l=>l!=="");if(!lines.length)lines=[html];await Promise.all(lines.map((lineHtml,i)=>setDoc(doc(db,`shared_lines_${key}`,`line_${i}`),{html:lineHtml,idx:i,updatedBy:"migration",updatedAt:new Date().toISOString()})));}await setDoc(doc(db,"settings","migration_done"),{shared_lines:true,migratedAt:new Date().toISOString()},{merge:true});}catch(e){console.error("마이그레이션 실패:",e);}}
 
-function initData(){migrateSharedData();onSnapshot(doc(db,"settings","telegram_ids"),snap=>{if(!snap.exists())return;companies=snap.data();renderCompanies();});onSnapshot(collection(db,"loans"),snap=>{allLoans=snap.docs.map(d=>({id:d.id,...d.data()}));renderCompanies();renderNotifPanel();if($("search-input")&&$("search-input").value.trim())renderLoans();});initLineEditor("progress-editor","progress-search","progress","progress-save-indicator","progress-lock-indicator");initLineEditor("notice-editor","notice-search","notice","notice-save-indicator","notice-lock-indicator");onSnapshot(collection(db,"products"),snap=>{products=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));renderProductList();});initWeeklyStats();initStatsEdit();initDrawer();initLoanInnerTabs();initResizers();$("add-btn").addEventListener("click",addCustomer);$("add-input").addEventListener("keydown",e=>{if(e.key==="Enter")addCustomer();});$("search-input").addEventListener("input",()=>{const kw=$("search-input").value;$("loan-title").textContent=kw?("검색: "+kw):(selectedCompany||"업체를 선택하세요");renderLoans();});$("share-btn").addEventListener("click",shareToTelegram);$("c-add-btn").addEventListener("click",addCompany);$("product-add-btn").addEventListener("click",()=>showProductForm(null));initNotifBtn();}
+function initData(){migrateSharedData();onSnapshot(doc(db,"settings","telegram_ids"),snap=>{if(!snap.exists())return;companies=snap.data();renderCompanies();});onSnapshot(collection(db,"loans"),snap=>{allLoans=snap.docs.map(d=>({id:d.id,...d.data()}));renderCompanies();renderNotifPanel();if($("search-input")&&$("search-input").value.trim())renderLoans();});initLineEditor("progress-editor","progress-search","progress","progress-save-indicator","progress-lock-indicator");initLineEditor("notice-editor","notice-search","notice","notice-save-indicator","notice-lock-indicator");onSnapshot(collection(db,"products"),snap=>{products=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));renderProductList();});initWeeklyStats();initStatsEdit();initDrawer();initLoanInnerTabs();initResizers();$("add-btn").addEventListener("click",addCustomer);$("add-input").addEventListener("keydown",e=>{if(e.key==="Enter")addCustomer();});$("search-input").addEventListener("input",()=>{const kw=$("search-input").value;$("loan-title").textContent=kw?("검색: "+kw):(selectedCompany||"업체를 선택하세요");renderLoans();});$("share-btn").addEventListener("click",shareToTelegram);$("c-add-btn").addEventListener("click",addCompany);$("product-add-btn").addEventListener("click",()=>showProductForm(null));initNotifBtn();initCompanyMgmt();}
 
 async function initLineEditor(editorId,searchId,dbKey,indicatorId,lockIndicatorId){const editor=$(editorId);const indicator=indicatorId?$(indicatorId):null;const lockEl=lockIndicatorId?$(lockIndicatorId):null;if(!editor)return;let saveTimers={};let lastSavedLines={};let isApplying=false;let iAmLocked=false;let lockRenewTimer=null;let lockReleaseTimer=null;const LOCK_TTL=5*60*1000;
 function showIndicator(state){if(!indicator)return;indicator.className="save-indicator "+state;indicator.classList.remove("hidden");if(state==="saving")indicator.textContent="저장 중...";else if(state==="saved"){indicator.textContent="✓ 저장됨";setTimeout(()=>indicator.classList.add("hidden"),2000);}else if(state==="conflict")indicator.textContent="⚠ 충돌";}
@@ -1008,7 +1040,7 @@ function loadWeeklyStats(){weeklyUnsubs.forEach(u=>u());weeklyUnsubs=[];if(daily
 function renderStats(d){currentStatsData=d;const groups=d.groups||{},progReq=d.progress_req||{},approved=d.approved_groups||{},rejected=d.rejected_groups||{};const totalAppr=Object.values(approved).reduce((a,b)=>a+b,0),totalRej=Object.values(rejected).reduce((a,b)=>a+b,0);$("s-total").textContent=d.total||0;$("s-appr").textContent=totalAppr;$("s-rej").textContent=totalRej;const active=Object.entries(groups).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);if(!active.length){$("stats-tbody").innerHTML="<tr><td colspan='7' class='stats-empty'>접수 없음</td></tr>";return;}$("stats-tbody").innerHTML=active.map(([g,cnt])=>{const req=progReq[g]||0,appr=approved[g]||0,rej=rejected[g]||0,pct=cnt>0?Math.round(appr/cnt*100):0;if(statsEditMode)return`<tr><td>${esc(g)}</td><td class="num">${cnt}</td><td class="num editing"><input class="stats-edit-input" data-g="${esc(g)}" data-f="progress_req" value="${req}"/></td><td class="num editing"><input class="stats-edit-input" data-g="${esc(g)}" data-f="approved_groups" value="${appr}"/></td><td class="num editing"><input class="stats-edit-input" data-g="${esc(g)}" data-f="rejected_groups" value="${rej}"/></td><td class="num">${pct?pct+"%":"—"}</td><td></td></tr>`;return`<tr><td style="font-weight:500">${esc(g)}</td><td class="num">${cnt}</td><td class="num">${req}</td><td class="num" style="color:var(--green)">${appr}</td><td class="num" style="color:var(--red)">${rej}</td><td class="num">${pct?pct+"%":"—"}</td><td></td></tr>`;}).join("");}
 function initStatsEdit(){const toggleBtn=$("stats-edit-toggle"),saveRow=$("stats-save-row");toggleBtn.addEventListener("click",()=>{statsEditMode=!statsEditMode;toggleBtn.textContent=statsEditMode?"수정 중":"수정";toggleBtn.classList.toggle("on",statsEditMode);saveRow.classList.toggle("hidden",!statsEditMode);renderStats(currentStatsData);});$("stats-cancel-btn").addEventListener("click",()=>{statsEditMode=false;toggleBtn.textContent="수정";toggleBtn.classList.remove("on");saveRow.classList.add("hidden");renderStats(currentStatsData);});$("stats-save-btn").addEventListener("click",async()=>{const newProgReq={...(currentStatsData.progress_req||{})},newAppr={...(currentStatsData.approved_groups||{})},newRej={...(currentStatsData.rejected_groups||{})};$("stats-tbody").querySelectorAll(".stats-edit-input").forEach(inp=>{const g=inp.dataset.g,f=inp.dataset.f,v=parseInt(inp.value)||0;if(f==="progress_req")newProgReq[g]=v;else if(f==="approved_groups")newAppr[g]=v;else if(f==="rejected_groups")newRej[g]=v;});try{const dateStr=statsMode==="daily"?formatDate(currentDayDate):formatDate(currentWeekStart);await setDoc(doc(db,"stats",dateStr),{progress_req:newProgReq,approved_groups:newAppr,rejected_groups:newRej},{merge:true});statsEditMode=false;toggleBtn.textContent="수정";toggleBtn.classList.remove("on");saveRow.classList.add("hidden");}catch(e){alert("저장 실패: "+e.message);}});}
 
-function renderCompanies(){const names=Object.keys(companies).filter(k=>k!=="__placeholder"&&k!=="_placeholder");const hasContent=n=>allLoans.some(l=>l.company===n),cnt=n=>allLoans.filter(l=>l.company===n).length;const sorted=[...names.filter(n=>hasContent(n)).sort((a,b)=>a.localeCompare(b,"ko")),...names.filter(n=>!hasContent(n)).sort((a,b)=>a.localeCompare(b,"ko"))];const html=sorted.map(c=>`<div class="company-row${c===selectedCompany?" active":""}" data-name="${esc(c)}"><span class="company-dot${hasContent(c)?"":" empty"}"></span><span class="company-name">${esc(c)}</span>${cnt(c)?`<span class="company-cnt">${cnt(c)}</span>`:""}</div>`).join("")||"<div style='color:var(--text-subtle);padding:20px;text-align:center;font-size:12px'>업체 없음</div>";if($("company-list")){$("company-list").innerHTML=html;$("company-list").querySelectorAll(".company-row").forEach(el=>el.addEventListener("click",()=>selectCompany(el.dataset.name)));}if($("drawer-company-list")){$("drawer-company-list").innerHTML=html;$("drawer-company-list").querySelectorAll(".company-row").forEach(el=>el.addEventListener("click",()=>selectCompany(el.dataset.name,true)));}}
+function renderCompanies(){const names=Object.keys(companies).filter(k=>k!=="__placeholder"&&k!=="_placeholder");const hasContent=n=>allLoans.some(l=>l.company===n),cnt=n=>allLoans.filter(l=>l.company===n).length;const sorted=[...names.filter(n=>hasContent(n)).sort((a,b)=>a.localeCompare(b,"ko")),...names.filter(n=>!hasContent(n)).sort((a,b)=>a.localeCompare(b,"ko"))];const html=sorted.map(c=>`<div class="company-row${c===selectedCompany?" active":""}" data-name="${esc(c)}"><span class="company-dot${hasContent(c)?"":" empty"}"></span><span class="company-name">${esc(c)}</span>${cnt(c)?`<span class="company-cnt">${cnt(c)}</span>`:""}</div>`).join("")||"<div style='color:var(--text-subtle);padding:20px;text-align:center;font-size:12px'>업체 없음</div>";if($("company-list")){$("company-list").innerHTML=html;$("company-list").querySelectorAll(".company-row").forEach(el=>el.addEventListener("click",()=>selectCompany(el.dataset.name)));}if($("drawer-company-list")){$("drawer-company-list").innerHTML=html;$("drawer-company-list").querySelectorAll(".company-row").forEach(el=>el.addEventListener("click",()=>selectCompany(el.dataset.name,true)));}const mgmtModal=$("company-mgmt-modal");if(mgmtModal&&!mgmtModal.classList.contains("hidden"))renderCompanyMgmtList();}
 async function addCompany(){const name=$("c-name").value.trim(),tid=$("c-tid").value.trim();if(!name)return;try{await setDoc(doc(db,"settings","telegram_ids"),{[name]:tid||"0"},{merge:true});$("c-name").value="";$("c-tid").value="";}catch(e){alert("추가 실패: "+e.message);}}
 function selectCompany(name,fromDrawer=false){selectedCompany=name;$("loan-title").textContent=name;$("add-row").classList.remove("hidden");$("share-btn").classList.remove("hidden");document.querySelectorAll(".company-row").forEach(el=>el.classList.toggle("active",el.dataset.name===name));if(loansUnsub)loansUnsub();loansUnsub=onSnapshot(query(collection(db,"loans"),where("company","==",name)),snap=>{loans=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??999)-(b.order??999));renderLoans();});if(fromDrawer){closeDrawer();if(window.innerWidth<=700)switchLoanInnerTab("col-loans");}}
 
@@ -1056,6 +1088,78 @@ function initResizers(){document.querySelectorAll(".col-resizer").forEach(resize
 function openDrawer(){$("company-drawer").classList.add("open");$("drawer-overlay").classList.add("open");}
 function closeDrawer(){$("company-drawer").classList.remove("open");$("drawer-overlay").classList.remove("open");}
 function initDrawer(){$("hamburger-btn").addEventListener("click",openDrawer);$("drawer-close").addEventListener("click",closeDrawer);$("drawer-overlay").addEventListener("click",closeDrawer);$("d-add-btn").addEventListener("click",async()=>{const name=$("d-name").value.trim(),tid=$("d-tid").value.trim();if(!name)return;try{await setDoc(doc(db,"settings","telegram_ids"),{[name]:tid||"0"},{merge:true});$("d-name").value="";$("d-tid").value="";}catch(e){alert("추가 실패: "+e.message);}});}
+
+function initCompanyMgmt(){
+  const btn=$("company-mgmt-btn");
+  const modal=$("company-mgmt-modal");
+  const closeBtn=$("company-mgmt-close");
+  const doneBtn=$("company-mgmt-done");
+  if(btn)btn.addEventListener("click",()=>{renderCompanyMgmtList();modal.classList.remove("hidden");});
+  if(closeBtn)closeBtn.addEventListener("click",()=>modal.classList.add("hidden"));
+  if(doneBtn)doneBtn.addEventListener("click",()=>modal.classList.add("hidden"));
+  modal.addEventListener("click",e=>{if(e.target===modal)modal.classList.add("hidden");});
+}
+function renderCompanyMgmtList(){
+  const names=Object.keys(companies).filter(k=>k!=="__placeholder"&&k!=="_placeholder");
+  const sorted=[...names].sort((a,b)=>a.localeCompare(b,"ko"));
+  const body=$("company-mgmt-body");
+  if(!sorted.length){body.innerHTML="<div style='color:var(--text-subtle);text-align:center;padding:24px;font-size:13px'>등록된 업체가 없습니다</div>";return;}
+  body.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:6px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+      <span class="mgmt-col-label">업체명</span>
+      <span class="mgmt-col-label">텔레그램 ID</span>
+      <span></span><span></span>
+    </div>
+    ${sorted.map(name=>`
+      <div class="company-mgmt-row" data-orig="${esc(name)}">
+        <input class="company-mgmt-input" data-role="name" value="${esc(name)}" placeholder="업체명"/>
+        <input class="company-mgmt-input" data-role="tid" value="${esc(companies[name]||"")}" placeholder="텔레그램 ID"/>
+        <button class="company-mgmt-save">저장</button>
+        <button class="company-mgmt-del">삭제</button>
+      </div>
+    `).join("")}
+  `;
+  body.querySelectorAll(".company-mgmt-row").forEach(row=>{
+    const origName=row.dataset.orig;
+    const nameInput=row.querySelector("[data-role='name']");
+    const tidInput=row.querySelector("[data-role='tid']");
+    row.querySelector(".company-mgmt-save").addEventListener("click",async()=>{
+      const newName=nameInput.value.trim();
+      const newTid=tidInput.value.trim();
+      if(!newName){nameInput.style.borderColor="var(--red)";return;}
+      nameInput.style.borderColor="";
+      await saveCompanyChange(origName,newName,newTid);
+    });
+    row.querySelector(".company-mgmt-del").addEventListener("click",async()=>{
+      if(!confirm(`"${origName}" 업체를 삭제할까요?\n소속 고객 데이터는 유지됩니다.`))return;
+      await deleteCompanyEntry(origName);
+    });
+    nameInput.addEventListener("keydown",e=>{if(e.key==="Enter")row.querySelector(".company-mgmt-save").click();});
+    tidInput.addEventListener("keydown",e=>{if(e.key==="Enter")row.querySelector(".company-mgmt-save").click();});
+  });
+}
+async function saveCompanyChange(oldName,newName,newTid){
+  try{
+    const updates={[newName]:newTid||"0"};
+    if(oldName!==newName){
+      updates[oldName]=deleteField();
+      const q=query(collection(db,"loans"),where("company","==",oldName));
+      const snap=await getDocs(q);
+      await Promise.all(snap.docs.map(d=>updateDoc(doc(db,"loans",d.id),{company:newName})));
+      if(selectedCompany===oldName){selectedCompany=newName;$("loan-title").textContent=newName;}
+    }
+    await updateDoc(doc(db,"settings","telegram_ids"),updates);
+    showToast("✓ 저장됨");
+  }catch(e){alert("저장 실패: "+e.message);}
+}
+async function deleteCompanyEntry(name){
+  try{
+    await updateDoc(doc(db,"settings","telegram_ids"),{[name]:deleteField()});
+    showToast('"'+name+'" 삭제됨');
+    if(selectedCompany===name){selectedCompany="";$("loan-title").textContent="업체를 선택하세요";$("add-row").classList.add("hidden");$("share-btn").classList.add("hidden");}
+  }catch(e){alert("삭제 실패: "+e.message);}
+}
+
 function switchLoanInnerTab(panelId){["col-loans","col-progress","col-notice"].forEach(id=>{const el=$(id);if(el)el.classList.remove("mob-active");});const target=$(panelId);if(target)target.classList.add("mob-active");document.querySelectorAll(".loan-inner-tab").forEach(btn=>btn.classList.toggle("active",btn.dataset.panel===panelId));}
 function initLoanInnerTabs(){if(window.innerWidth<=700)switchLoanInnerTab("col-loans");document.querySelectorAll(".loan-inner-tab").forEach(btn=>btn.addEventListener("click",()=>switchLoanInnerTab(btn.dataset.panel)));window.addEventListener("resize",()=>{if(window.innerWidth>700){["col-loans","col-progress","col-notice"].forEach(id=>{const el=$(id);if(el)el.classList.remove("mob-active");});}else{const active=document.querySelector(".loan-inner-tab.active");if(active)switchLoanInnerTab(active.dataset.panel);}});}
 

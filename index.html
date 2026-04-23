@@ -421,6 +421,29 @@ td.editing{background:var(--bg)}
 .company-mgmt-btn{background:none;border:none;color:var(--text-subtle);cursor:pointer;padding:3px 6px;border-radius:var(--radius);font-size:14px;line-height:1;transition:all .15s;display:flex;align-items:center}
 .company-mgmt-btn:hover{background:var(--bg-3);color:var(--text)}
 
+/* ── 상태 칩 ── */
+.chip{display:inline-flex;align-items:center;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:600;white-space:nowrap;font-family:'JetBrains Mono',monospace;border:1px solid transparent;vertical-align:middle;line-height:1.4}
+.status-filter-bar{display:flex;align-items:center;gap:5px;padding:5px 10px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:var(--bg-2);position:relative;min-height:32px}
+.filter-chip-btn,.filter-chip-all{border-radius:10px;padding:2px 10px;font-size:11px;cursor:pointer;font-weight:500;transition:all .15s;white-space:nowrap;font-family:'JetBrains Mono',monospace;border:1px solid var(--border);background:var(--bg-3);color:var(--text-muted)}
+.filter-chip-btn:hover,.filter-chip-all:hover{color:var(--text);border-color:var(--text-muted)}
+.filter-chip-all.active{background:var(--accent-muted);color:var(--accent);border-color:rgba(47,129,247,.3)}
+.filter-chip-gear{background:none;border:none;color:var(--text-subtle);cursor:pointer;padding:2px 5px;border-radius:var(--radius);display:flex;align-items:center;transition:all .15s;margin-left:auto;flex-shrink:0}
+.filter-chip-gear:hover{background:var(--bg-3);color:var(--text)}
+.chip-picker-wrap{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0 2px}
+.chip-pick-btn{background:var(--bg-3);color:var(--text-muted);border:1px solid var(--border);border-radius:10px;padding:2px 9px;font-size:11px;cursor:pointer;font-weight:500;transition:all .12s;font-family:'JetBrains Mono',monospace}
+.chip-pick-btn:hover{border-color:var(--text-muted)}
+.chip-pick-btn.on{font-weight:700}
+.chip-pick-none{background:none;border:none;color:var(--text-subtle);font-size:11px;cursor:pointer;padding:2px 5px;border-radius:4px;transition:color .12s;flex-shrink:0}
+.chip-pick-none:hover{color:var(--text-muted)}
+.chip-mgmt-panel{position:absolute;top:100%;left:0;right:0;background:var(--bg-2);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:10px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.chip-mgmt-list{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;min-height:20px}
+.chip-mgmt-item{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--border);border-radius:10px;padding:2px 6px 2px 9px;font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;background:var(--bg-3)}
+.chip-del-x{background:none;border:none;color:var(--text-subtle);cursor:pointer;font-size:14px;padding:0 1px;line-height:1;transition:color .1s}
+.chip-del-x:hover{color:var(--red)}
+.chip-add-row{display:flex;gap:5px}
+.chip-add-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;color:var(--text);font-size:11px;outline:none;transition:border-color .15s}
+.chip-add-input:focus{border-color:var(--accent)}
+.chip-add-btn{background:var(--accent);color:white;border:none;border-radius:var(--radius);padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;flex-shrink:0}
 /* ── 반응형 ── */
 @media(max-width:700px){
   .hamburger-btn{display:flex;align-items:center}
@@ -570,6 +593,7 @@ input[type=radio]{accent-color:var(--accent)}
           <input class="search-input" id="search-input" placeholder="전체 고객명 검색"/>
           <button class="share-btn hidden" id="share-btn">텔레그램 전송</button>
         </div>
+        <div class="status-filter-bar" id="status-filter-bar"></div>
         <div class="loan-list" id="loan-list"></div>
         <div class="add-customer-row hidden" id="add-row">
           <input class="add-input" id="add-input" placeholder="고객명 입력..."/>
@@ -815,8 +839,11 @@ const esc=s=>String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 let currentUser=null,companies={},allLoans=[],loans=[],products=[],selectedCompany="",selectedProduct=null;
 let loansUnsub=null,formData={},activeSido="";
 let myNickname="";
+let statusChips=["서류준비중","지점 심사중","자서예정","기표예정","브릿지예정"];
+let activeStatusFilter=null;
+const CHIP_COLORS=[{bg:"rgba(227,179,65,.18)",color:"#e3b341",border:"rgba(227,179,65,.3)"},{bg:"rgba(47,129,247,.15)",color:"#2f81f7",border:"rgba(47,129,247,.25)"},{bg:"rgba(163,113,247,.15)",color:"#a371f7",border:"rgba(163,113,247,.25)"},{bg:"rgba(63,185,80,.15)",color:"#3fb950",border:"rgba(63,185,80,.25)"},{bg:"rgba(248,81,73,.15)",color:"#f85149",border:"rgba(248,81,73,.25)"},{bg:"rgba(56,189,248,.15)",color:"#38bdf8",border:"rgba(56,189,248,.25)"}];
 
-function showToast(msg){let t=document.getElementById("editor-toast");if(!t){t=document.createElement("div");t.id="editor-toast";document.body.appendChild(t);}t.textContent=msg;t.style.opacity="1";clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity="0";},2500);}
+function showToast(msg,type="error"){let t=document.getElementById("editor-toast");if(!t){t=document.createElement("div");t.id="editor-toast";document.body.appendChild(t);}t.textContent=msg;if(type==="success"){t.style.background="var(--green-muted)";t.style.color="var(--green)";t.style.borderColor="rgba(63,185,80,.2)";}else{t.style.background="var(--red-muted)";t.style.color="var(--red)";t.style.borderColor="rgba(248,81,73,.2)";}t.style.opacity="1";clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity="0";},2500);}
 
 function initNickname(){const saved=localStorage.getItem("lms_nickname");if(saved){myNickname=saved;return Promise.resolve();}return new Promise(resolve=>{const overlay=$("nickname-overlay"),input=$("nickname-input");overlay.classList.remove("hidden");setTimeout(()=>input.focus(),100);const confirm=()=>{const name=input.value.trim();if(!name){input.style.borderColor="var(--red)";return;}myNickname=name;localStorage.setItem("lms_nickname",name);overlay.classList.add("hidden");resolve();};$("nickname-btn").addEventListener("click",confirm);input.addEventListener("keydown",e=>{if(e.key==="Enter")confirm();});});}
 
@@ -830,7 +857,7 @@ onAuthStateChanged(auth,async user=>{$("loading").classList.add("hidden");if(use
 
 async function migrateSharedData(){try{const flagSnap=await getDoc(doc(db,"settings","migration_done"));if(flagSnap.exists()&&flagSnap.data().shared_lines)return;for(const key of["progress","notice"]){const oldDoc=await getDoc(doc(db,"shared",key));if(!oldDoc.exists())continue;const html=oldDoc.data().html||"";if(!html.trim())continue;const tempDiv=document.createElement("div");tempDiv.innerHTML=html;const blocks=tempDiv.querySelectorAll(":scope > div, :scope > p");let lines=blocks.length>0?[...blocks].map(b=>b.innerHTML||""):html.split(/<br\s*\/?>/i).map(l=>l.trim()).filter(l=>l!=="");if(!lines.length)lines=[html];await Promise.all(lines.map((lineHtml,i)=>setDoc(doc(db,`shared_lines_${key}`,`line_${i}`),{html:lineHtml,idx:i,updatedBy:"migration",updatedAt:new Date().toISOString()})));}await setDoc(doc(db,"settings","migration_done"),{shared_lines:true,migratedAt:new Date().toISOString()},{merge:true});}catch(e){console.error("마이그레이션 실패:",e);}}
 
-function initData(){migrateSharedData();onSnapshot(doc(db,"settings","telegram_ids"),snap=>{if(!snap.exists())return;companies=snap.data();renderCompanies();});onSnapshot(collection(db,"loans"),snap=>{allLoans=snap.docs.map(d=>({id:d.id,...d.data()}));renderCompanies();renderNotifPanel();if($("search-input")&&$("search-input").value.trim())renderLoans();});initLineEditor("progress-editor","progress-search","progress","progress-save-indicator","progress-lock-indicator");initLineEditor("notice-editor","notice-search","notice","notice-save-indicator","notice-lock-indicator");onSnapshot(collection(db,"products"),snap=>{products=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));renderProductList();});initWeeklyStats();initStatsEdit();initDrawer();initLoanInnerTabs();initResizers();$("add-btn").addEventListener("click",addCustomer);$("add-input").addEventListener("keydown",e=>{if(e.key==="Enter")addCustomer();});$("search-input").addEventListener("input",()=>{const kw=$("search-input").value;$("loan-title").textContent=kw?("검색: "+kw):(selectedCompany||"업체를 선택하세요");renderLoans();});$("share-btn").addEventListener("click",shareToTelegram);$("c-add-btn").addEventListener("click",addCompany);$("product-add-btn").addEventListener("click",()=>showProductForm(null));initNotifBtn();initCompanyMgmt();}
+function initData(){migrateSharedData();onSnapshot(doc(db,"settings","telegram_ids"),snap=>{if(!snap.exists())return;companies=snap.data();renderCompanies();});onSnapshot(collection(db,"loans"),snap=>{allLoans=snap.docs.map(d=>({id:d.id,...d.data()}));renderCompanies();renderNotifPanel();if(activeStatusFilter)renderLoans();else if($("search-input")&&$("search-input").value.trim())renderLoans();});initLineEditor("progress-editor","progress-search","progress","progress-save-indicator","progress-lock-indicator");initLineEditor("notice-editor","notice-search","notice","notice-save-indicator","notice-lock-indicator");onSnapshot(collection(db,"products"),snap=>{products=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));renderProductList();});initWeeklyStats();initStatsEdit();initDrawer();initLoanInnerTabs();initResizers();$("add-btn").addEventListener("click",addCustomer);$("add-input").addEventListener("keydown",e=>{if(e.key==="Enter")addCustomer();});$("search-input").addEventListener("input",()=>{const kw=$("search-input").value;$("loan-title").textContent=kw?("검색: "+kw):(selectedCompany||"업체를 선택하세요");renderLoans();});$("share-btn").addEventListener("click",shareToTelegram);$("c-add-btn").addEventListener("click",addCompany);$("product-add-btn").addEventListener("click",()=>showProductForm(null));initNotifBtn();initCompanyMgmt();initChipFilter();onSnapshot(doc(db,"settings","status_chips"),snap=>{if(snap.exists()&&snap.data().chips)statusChips=snap.data().chips;renderStatusFilterBar();if(activeStatusFilter)renderLoans();});renderStatusFilterBar();}
 
 async function initLineEditor(editorId,searchId,dbKey,indicatorId,lockIndicatorId){const editor=$(editorId);const indicator=indicatorId?$(indicatorId):null;const lockEl=lockIndicatorId?$(lockIndicatorId):null;if(!editor)return;let saveTimers={};let lastSavedLines={};let isApplying=false;let iAmLocked=false;let lockRenewTimer=null;let lockReleaseTimer=null;const LOCK_TTL=5*60*1000;
 function showIndicator(state){if(!indicator)return;indicator.className="save-indicator "+state;indicator.classList.remove("hidden");if(state==="saving")indicator.textContent="저장 중...";else if(state==="saved"){indicator.textContent="✓ 저장됨";setTimeout(()=>indicator.classList.add("hidden"),2000);}else if(state==="conflict")indicator.textContent="⚠ 충돌";}
@@ -1044,8 +1071,29 @@ function renderCompanies(){const names=Object.keys(companies).filter(k=>k!=="__p
 async function addCompany(){const name=$("c-name").value.trim(),tid=$("c-tid").value.trim();if(!name)return;try{await setDoc(doc(db,"settings","telegram_ids"),{[name]:tid||"0"},{merge:true});$("c-name").value="";$("c-tid").value="";}catch(e){alert("추가 실패: "+e.message);}}
 function selectCompany(name,fromDrawer=false){selectedCompany=name;$("loan-title").textContent=name;$("add-row").classList.remove("hidden");$("share-btn").classList.remove("hidden");document.querySelectorAll(".company-row").forEach(el=>el.classList.toggle("active",el.dataset.name===name));if(loansUnsub)loansUnsub();loansUnsub=onSnapshot(query(collection(db,"loans"),where("company","==",name)),snap=>{loans=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??999)-(b.order??999));renderLoans();});if(fromDrawer){closeDrawer();if(window.innerWidth<=700)switchLoanInnerTab("col-loans");}}
 
-function renderLoans(){const kw=$("search-input").value.toLowerCase();if(kw){const matched=allLoans.filter(l=>(l.customer||"").toLowerCase().includes(kw));if(!matched.length){$("loan-list").innerHTML="<div style='color:var(--text-subtle);padding:16px;text-align:center;font-size:12px'>검색 결과 없음</div>";return;}const byCompany={};matched.forEach(l=>{const c=l.company||"(미지정)";if(!byCompany[c])byCompany[c]=[];byCompany[c].push(l);});$("loan-list").innerHTML=Object.entries(byCompany).map(([company,list])=>`<div style="margin-bottom:6px"><div class="company-group-header">${esc(company)}</div><div style="border:1px solid rgba(47,129,247,.15);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden">${list.map(loan=>loanItemHtml(loan)).join("")}</div></div>`).join("");bindLoanEvents();return;}$("loan-list").innerHTML=loans.map(loan=>loanItemHtml(loan,true)).join("")||"<div style='color:var(--text-subtle);padding:20px;text-align:center;font-size:12px'>고객이 없습니다</div>";bindLoanEvents();initDrag();}
-function loanItemHtml(loan,draggable=false){return`<div class="loan-item" ${draggable?'draggable="true"':''} data-id="${loan.id}"><div class="loan-view"><div class="loan-header"><div class="customer-info"><div class="customer-name">${esc(loan.customer||"")}</div>${loan.status&&loan.status!=="-"?`<div class="customer-status">${esc(loan.status)}</div>`:""}</div><div class="loan-actions"><button class="del-btn" data-id="${loan.id}">삭제</button></div></div>${loan.details?`<div class="loan-details">${esc(loan.details)}</div>`:""}</div><div class="edit-form hidden" id="ef-${loan.id}"><input class="edit-input" id="ec-${loan.id}" placeholder="고객명" value="${esc(loan.customer||"")}"/><input class="edit-input" id="es-${loan.id}" placeholder="상태" value="${esc(loan.status||"")}"/><textarea class="edit-textarea" id="ed-${loan.id}" rows="${Math.max(3,(loan.details||"").split("\n").length+1)}">${esc(loan.details||"")}</textarea><div class="edit-actions"><button class="save-btn" data-id="${loan.id}">저장</button><button class="cancel-btn">취소</button></div></div></div>`;}
+function renderLoans(){
+  const kw=$("search-input").value.toLowerCase();
+  const groupHtml=(company,list)=>`<div style="margin-bottom:6px"><div class="company-group-header">${esc(company)}</div><div style="border:1px solid rgba(47,129,247,.15);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden">${list.map(loan=>loanItemHtml(loan)).join("")}</div></div>`;
+  if(activeStatusFilter){
+    const matched=allLoans.filter(l=>(l.status||"-")===activeStatusFilter);
+    if(!matched.length){$("loan-list").innerHTML="<div style='color:var(--text-subtle);padding:20px;text-align:center;font-size:12px'>해당 상태의 고객이 없습니다</div>";bindLoanEvents();return;}
+    const byCompany={};matched.forEach(l=>{const c=l.company||"(미지정)";if(!byCompany[c])byCompany[c]=[];byCompany[c].push(l);});
+    $("loan-list").innerHTML=Object.entries(byCompany).map(([c,list])=>groupHtml(c,list)).join("");
+    bindLoanEvents();return;
+  }
+  if(kw){
+    const matched=allLoans.filter(l=>(l.customer||"").toLowerCase().includes(kw));
+    if(!matched.length){$("loan-list").innerHTML="<div style='color:var(--text-subtle);padding:16px;text-align:center;font-size:12px'>검색 결과 없음</div>";return;}
+    const byCompany={};matched.forEach(l=>{const c=l.company||"(미지정)";if(!byCompany[c])byCompany[c]=[];byCompany[c].push(l);});
+    $("loan-list").innerHTML=Object.entries(byCompany).map(([c,list])=>groupHtml(c,list)).join("");
+    bindLoanEvents();return;
+  }
+  $("loan-list").innerHTML=loans.map(loan=>loanItemHtml(loan,true)).join("")||"<div style='color:var(--text-subtle);padding:20px;text-align:center;font-size:12px'>고객이 없습니다</div>";
+  bindLoanEvents();initDrag();
+}
+function chipHtml(status){if(!status||status==="-")return"";const i=statusChips.indexOf(status);const c=i>=0?CHIP_COLORS[i%CHIP_COLORS.length]:{bg:"var(--bg-3)",color:"var(--text-muted)",border:"var(--border)"};return`<span class="chip" style="background:${c.bg};color:${c.color};border-color:${c.border}">${esc(status)}</span>`;}
+function chipPickerHtml(loanId,currentStatus){const btns=statusChips.map((chip,i)=>{const c=CHIP_COLORS[i%CHIP_COLORS.length];const isOn=currentStatus===chip;return`<button class="chip-pick-btn${isOn?" on":""}" data-s="${esc(chip)}" style="${isOn?`background:${c.bg};color:${c.color};border-color:${c.border}`:""}">${esc(chip)}</button>`;}).join("");const customVal=currentStatus&&currentStatus!=="-"&&!statusChips.includes(currentStatus)?esc(currentStatus):"";return`<div class="chip-picker-wrap" id="cp-${loanId}">${btns}<button class="chip-pick-none">✕ 없음</button></div><input class="edit-input" id="es-${loanId}" placeholder="직접 입력 (선택사항)" value="${customVal}"/>`;}
+function loanItemHtml(loan,draggable=false){return`<div class="loan-item" ${draggable?'draggable="true"':''} data-id="${loan.id}"><div class="loan-view"><div class="loan-header"><div class="customer-info"><div class="customer-name">${esc(loan.customer||"")}${loan.status&&loan.status!=="-"?" "+chipHtml(loan.status):""}</div></div><div class="loan-actions"><button class="del-btn" data-id="${loan.id}">삭제</button></div></div>${loan.details?`<div class="loan-details">${esc(loan.details)}</div>`:""}</div><div class="edit-form hidden" id="ef-${loan.id}"><input class="edit-input" id="ec-${loan.id}" placeholder="고객명" value="${esc(loan.customer||"")}"/>${chipPickerHtml(loan.id,loan.status||"")}<textarea class="edit-textarea" id="ed-${loan.id}" rows="${Math.max(3,(loan.details||"").split("\n").length+1)}">${esc(loan.details||"")}</textarea><div class="edit-actions"><button class="save-btn" data-id="${loan.id}">저장</button><button class="cancel-btn">취소</button></div></div></div>`;}
 function bindLoanEvents(){
   $("loan-list").querySelectorAll(".loan-view").forEach(view=>{
     view.addEventListener("click",e=>{
@@ -1063,12 +1111,35 @@ function bindLoanEvents(){
     item.querySelector(".loan-view").classList.remove("hidden");
     item.querySelector(".edit-form").classList.add("hidden");
   }));
+  $("loan-list").querySelectorAll(".chip-pick-btn").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const wrap=btn.closest(".chip-picker-wrap");
+      const lid=wrap.id.replace("cp-","");
+      const isOn=btn.classList.contains("on");
+      wrap.querySelectorAll(".chip-pick-btn").forEach(b=>{b.classList.remove("on");b.style.background="";b.style.color="";b.style.borderColor="";});
+      if(!isOn){
+        const i=statusChips.indexOf(btn.dataset.s);
+        const c=i>=0?CHIP_COLORS[i%CHIP_COLORS.length]:{bg:"var(--bg-3)",color:"var(--text-muted)",border:"var(--border)"};
+        btn.classList.add("on");btn.style.background=c.bg;btn.style.color=c.color;btn.style.borderColor=c.border;
+        const inp=$("es-"+lid);if(inp)inp.value="";
+      }
+    });
+  });
+  $("loan-list").querySelectorAll(".chip-pick-none").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const wrap=btn.closest(".chip-picker-wrap");
+      wrap.querySelectorAll(".chip-pick-btn").forEach(b=>{b.classList.remove("on");b.style.background="";b.style.color="";b.style.borderColor="";});
+    });
+  });
   $("loan-list").querySelectorAll(".save-btn").forEach(btn=>{
     btn.addEventListener("click",async()=>{
       const id=btn.dataset.id;
       const item=btn.closest(".loan-item");
-      await updateDoc(doc(db,"loans",id),{customer:$("ec-"+id).value.trim(),status:$("es-"+id).value.trim(),details:$("ed-"+id).value.trim(),updatedBy:currentUser.email,updatedAt:new Date().toISOString()});
-      item.draggable=true; // 드래그 복원
+      const selectedChip=item.querySelector(".chip-pick-btn.on");
+      const customVal=($("es-"+id)?.value||"").trim();
+      const statusVal=customVal||(selectedChip?selectedChip.dataset.s:"-");
+      await updateDoc(doc(db,"loans",id),{customer:$("ec-"+id).value.trim(),status:statusVal,details:$("ed-"+id).value.trim(),updatedBy:currentUser.email,updatedAt:new Date().toISOString()});
+      item.draggable=true;
     });
   });
   $("loan-list").querySelectorAll(".del-btn").forEach(btn=>{
@@ -1082,7 +1153,7 @@ function bindLoanEvents(){
 let dragId=null;
 function initDrag(){$("loan-list").querySelectorAll(".loan-item").forEach(item=>{item.addEventListener("dragstart",e=>{dragId=item.dataset.id;item.classList.add("dragging");e.dataTransfer.effectAllowed="move";});item.addEventListener("dragend",()=>item.classList.remove("dragging"));item.addEventListener("dragover",e=>{e.preventDefault();item.classList.add("drag-over");});item.addEventListener("dragleave",()=>item.classList.remove("drag-over"));item.addEventListener("drop",async e=>{e.preventDefault();item.classList.remove("drag-over");if(!dragId||dragId===item.dataset.id)return;const all=[...$("loan-list").querySelectorAll(".loan-item")];const fi=all.findIndex(i=>i.dataset.id===dragId),ti=all.findIndex(i=>i.dataset.id===item.dataset.id);const reord=[...loans];const[mv]=reord.splice(fi,1);reord.splice(ti,0,mv);await Promise.all(reord.map((l,i)=>updateDoc(doc(db,"loans",l.id),{order:i})));});});}
 async function addCustomer(){const inp=$("add-input"),name=inp.value.trim();if(!name||!selectedCompany)return;try{const ref=doc(collection(db,"loans"));await setDoc(ref,{customer:name,status:"-",details:"",company:selectedCompany,order:loans.length,id:ref.id});inp.value="";}catch(e){alert("추가 실패: "+e.message);}}
-async function shareToTelegram(){if(!selectedCompany)return;const tid=companies[selectedCompany];if(!tid||tid==="0"){alert("텔레그램 ID가 없습니다.");return;}let msg="진행현황\n";loans.forEach(l=>{const txt=[l.customer,l.status,l.details].filter(Boolean).join("\n");if(txt.trim())msg+="\n"+txt+"\n----------------------------------------";});await addDoc(collection(db,"commands"),{chat_id:isNaN(tid)?tid:parseInt(tid),text:msg,status:"pending",timestamp:serverTimestamp()});alert("["+selectedCompany+"] 텔레그램 전송 완료");}
+async function shareToTelegram(){if(!selectedCompany)return;const tid=companies[selectedCompany];if(!tid||tid==="0"){alert("텔레그램 ID가 없습니다.");return;}let msg="진행현황\n";loans.forEach(l=>{const txt=[l.customer,l.details].filter(Boolean).join("\n");if(txt.trim())msg+="\n"+txt+"\n----------------------------------------";});await addDoc(collection(db,"commands"),{chat_id:isNaN(tid)?tid:parseInt(tid),text:msg,status:"pending",timestamp:serverTimestamp()});alert("["+selectedCompany+"] 텔레그램 전송 완료");}
 
 function initResizers(){document.querySelectorAll(".col-resizer").forEach(resizer=>{let startX=0,startW=0,targetEl=null;resizer.addEventListener("mousedown",e=>{e.preventDefault();targetEl=document.getElementById(resizer.dataset.target);if(!targetEl)return;startX=e.clientX;startW=targetEl.offsetWidth;resizer.classList.add("dragging");document.body.style.cursor="col-resize";document.body.style.userSelect="none";const onMove=e=>{const newW=Math.max(80,startW+(e.clientX-startX));targetEl.style.width=newW+"px";targetEl.style.flex="none";};const onUp=()=>{resizer.classList.remove("dragging");document.body.style.cursor="";document.body.style.userSelect="";document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp);};document.addEventListener("mousemove",onMove);document.addEventListener("mouseup",onUp);});});}
 function openDrawer(){$("company-drawer").classList.add("open");$("drawer-overlay").classList.add("open");}
@@ -1149,15 +1220,87 @@ async function saveCompanyChange(oldName,newName,newTid){
       if(selectedCompany===oldName){selectedCompany=newName;$("loan-title").textContent=newName;}
     }
     await updateDoc(doc(db,"settings","telegram_ids"),updates);
-    showToast("✓ 저장됨");
+    showToast("✓ 저장됨","success");
   }catch(e){alert("저장 실패: "+e.message);}
 }
 async function deleteCompanyEntry(name){
   try{
     await updateDoc(doc(db,"settings","telegram_ids"),{[name]:deleteField()});
-    showToast('"'+name+'" 삭제됨');
+    showToast('"'+name+'" 삭제됨',"success");
     if(selectedCompany===name){selectedCompany="";$("loan-title").textContent="업체를 선택하세요";$("add-row").classList.add("hidden");$("share-btn").classList.add("hidden");}
   }catch(e){alert("삭제 실패: "+e.message);}
+}
+
+const GEAR_SVG=`<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"/></svg>`;
+
+function renderStatusFilterBar(){
+  const bar=$("status-filter-bar");
+  if(!bar)return;
+  const chips=statusChips.map((chip,i)=>{
+    const c=CHIP_COLORS[i%CHIP_COLORS.length];
+    const isActive=activeStatusFilter===chip;
+    return`<button class="filter-chip-btn${isActive?" active":""}" data-chip="${esc(chip)}" style="${isActive?`background:${c.bg};color:${c.color};border-color:${c.border}`:""}">${esc(chip)}</button>`;
+  }).join("");
+  bar.innerHTML=`<button class="filter-chip-all${!activeStatusFilter?" active":""}" id="filter-all-btn">전체</button>${chips}<button class="filter-chip-gear" id="chip-gear-btn" title="상태 관리">${GEAR_SVG}</button><div class="chip-mgmt-panel hidden" id="chip-mgmt-panel"></div>`;
+}
+function initChipFilter(){
+  const bar=$("status-filter-bar");
+  if(!bar)return;
+  bar.addEventListener("click",e=>{
+    const chipBtn=e.target.closest(".filter-chip-btn");
+    const allBtn=e.target.closest("#filter-all-btn");
+    const gearBtn=e.target.closest("#chip-gear-btn");
+    if(allBtn){
+      activeStatusFilter=null;
+      $("loan-title").textContent=selectedCompany||"업체를 선택하세요";
+      renderStatusFilterBar();renderLoans();
+    } else if(chipBtn){
+      const chip=chipBtn.dataset.chip;
+      activeStatusFilter=activeStatusFilter===chip?null:chip;
+      $("loan-title").textContent=activeStatusFilter?"상태: "+activeStatusFilter:(selectedCompany||"업체를 선택하세요");
+      renderStatusFilterBar();renderLoans();
+    } else if(gearBtn){
+      e.stopPropagation();
+      const p=$("chip-mgmt-panel");
+      if(p){p.classList.toggle("hidden");if(!p.classList.contains("hidden"))renderChipMgmt();}
+    }
+  });
+  document.addEventListener("click",e=>{
+    const bar2=$("status-filter-bar");
+    if(!bar2)return;
+    const p=$("chip-mgmt-panel");
+    if(p&&!p.classList.contains("hidden")&&!bar2.contains(e.target))p.classList.add("hidden");
+  });
+}
+function renderChipMgmt(){
+  const panel=$("chip-mgmt-panel");
+  if(!panel)return;
+  const items=statusChips.map((chip,i)=>`<span class="chip-mgmt-item"><span>${esc(chip)}</span><button class="chip-del-x" data-idx="${i}">×</button></span>`).join("");
+  panel.innerHTML=`<div class="chip-mgmt-list">${items||"<span style='color:var(--text-subtle);font-size:11px'>상태 없음</span>"}</div><div class="chip-add-row"><input class="chip-add-input" id="chip-add-input" placeholder="새 상태 이름 입력..."/><button class="chip-add-btn" id="chip-add-btn">추가</button></div>`;
+  panel.querySelectorAll(".chip-del-x").forEach(btn=>{
+    btn.addEventListener("click",async e=>{
+      e.stopPropagation();
+      const i=parseInt(btn.dataset.idx);
+      if(activeStatusFilter===statusChips[i])activeStatusFilter=null;
+      statusChips.splice(i,1);
+      await saveStatusChips();
+      renderChipMgmt();renderStatusFilterBar();renderLoans();
+    });
+  });
+  const addInput=$("chip-add-input"),addBtn=$("chip-add-btn");
+  const doAdd=async()=>{
+    const val=addInput.value.trim();
+    if(!val||statusChips.includes(val))return;
+    statusChips.push(val);
+    await saveStatusChips();
+    addInput.value="";
+    renderChipMgmt();renderStatusFilterBar();renderLoans();
+  };
+  addBtn.addEventListener("click",doAdd);
+  addInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.stopPropagation();doAdd();}});
+}
+async function saveStatusChips(){
+  try{await setDoc(doc(db,"settings","status_chips"),{chips:statusChips});}catch(e){console.error("칩 저장 실패",e);}
 }
 
 function switchLoanInnerTab(panelId){["col-loans","col-progress","col-notice"].forEach(id=>{const el=$(id);if(el)el.classList.remove("mob-active");});const target=$(panelId);if(target)target.classList.add("mob-active");document.querySelectorAll(".loan-inner-tab").forEach(btn=>btn.classList.toggle("active",btn.dataset.panel===panelId));}

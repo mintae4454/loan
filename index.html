@@ -91,6 +91,28 @@ input,textarea,select,button{font-family:inherit}
 .logout-btn{background:var(--bg-3);color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius);padding:4px 10px;font-size:12px;cursor:pointer;transition:all .15s}
 .logout-btn:hover{background:var(--bg-4);color:var(--text)}
 
+/* ── 공지 바 ── */
+.notice-center{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;padding:0 8px;overflow:hidden}
+.notice-ticker{display:flex;align-items:center;gap:7px;max-width:540px;width:100%;min-width:0}
+.notice-label{font-size:10px;font-weight:700;color:#e3b341;background:rgba(227,179,65,.15);border:1px solid rgba(227,179,65,.3);border-radius:4px;padding:2px 6px;flex-shrink:0;font-family:'JetBrains Mono',monospace;letter-spacing:.3px}
+.notice-text{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;transition:opacity .25s,transform .25s}
+.notice-text.slide-out{opacity:0;transform:translateY(-7px);pointer-events:none}
+.notice-text.slide-in{opacity:0;transform:translateY(7px)}
+.notice-counter{font-size:10px;color:var(--text-subtle);font-family:'JetBrains Mono',monospace;flex-shrink:0}
+.notice-edit-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-subtle);font-size:11px;padding:1px 7px;cursor:pointer;flex-shrink:0;transition:all .15s;line-height:1.6}
+.notice-edit-btn:hover{color:var(--text);border-color:var(--text-muted)}
+.notice-modal-list{padding:12px 16px;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.notice-modal-item{display:flex;align-items:center;gap:8px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px}
+.notice-modal-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--text-muted)}
+.notice-del-btn{background:none;border:none;color:var(--text-subtle);cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0;line-height:1;transition:color .15s}
+.notice-del-btn:hover{color:var(--red)}
+.notice-modal-footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+.notice-modal-input{flex:1;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;padding:6px 10px;outline:none;font-family:inherit}
+.notice-modal-input:focus{border-color:var(--accent)}
+.notice-modal-add-btn{background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:6px 14px;font-size:13px;cursor:pointer;font-weight:600;transition:opacity .15s;flex-shrink:0}
+.notice-modal-add-btn:hover{opacity:.85}
+.notice-empty{color:var(--text-subtle);font-size:12px;text-align:center;padding:24px;font-family:'JetBrains Mono',monospace}
+
 /* ── 알림 벨 ── */
 @keyframes bellShake{0%,100%{transform:rotate(0)}15%{transform:rotate(12deg)}30%{transform:rotate(-10deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-6deg)}75%{transform:rotate(4deg)}}
 @keyframes notifSlideIn{from{opacity:0;transform:translateY(-8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -535,6 +557,14 @@ input[type=radio]{accent-color:var(--accent)}
       <div class="header-divider"></div>
       <span id="my-nickname-badge" style="color:var(--accent);font-size:12px;background:var(--accent-muted);border:1px solid rgba(47,129,247,.3);border-radius:20px;padding:3px 10px;cursor:pointer;font-weight:500" title="클릭하면 이름 변경"></span>
     </div>
+    <div class="notice-center">
+      <div class="notice-ticker">
+        <span class="notice-label">공지</span>
+        <span class="notice-text" id="notice-text"></span>
+        <span class="notice-counter" id="notice-counter"></span>
+        <button class="notice-edit-btn" id="notice-edit-btn" title="공지 관리">✎</button>
+      </div>
+    </div>
     <div class="app-header-right">
       <span class="user-email" id="user-email"></span>
       <button class="notif-btn" id="notif-btn" title="예정 알림">
@@ -821,6 +851,20 @@ input[type=radio]{accent-color:var(--accent)}
   </div>
 
   <!-- ── 업체 관리 모달 ── -->
+  <!-- 공지 관리 모달 -->
+  <div class="modal-overlay hidden" id="notice-mgmt-modal">
+    <div class="modal-box" style="max-width:460px">
+      <div class="modal-header">
+        <span class="modal-title">공지 관리</span>
+        <button class="modal-close" id="notice-mgmt-close">✕</button>
+      </div>
+      <div class="notice-modal-list" id="notice-modal-list"><div class="notice-empty">등록된 공지가 없습니다</div></div>
+      <div class="notice-modal-footer">
+        <input class="notice-modal-input" id="notice-modal-input" placeholder="새 공지 내용 입력..."/>
+        <button class="notice-modal-add-btn" id="notice-modal-add-btn">추가</button>
+      </div>
+    </div>
+  </div>
   <div class="modal-overlay hidden" id="company-mgmt-modal">
     <div class="modal-box" style="max-width:500px">
       <div class="modal-header">
@@ -873,7 +917,7 @@ onAuthStateChanged(auth,async user=>{$("loading").classList.add("hidden");if(use
 
 async function migrateSharedData(){try{const flagSnap=await getDoc(doc(db,"settings","migration_done"));if(flagSnap.exists()&&flagSnap.data().shared_lines)return;for(const key of["progress","notice"]){const oldDoc=await getDoc(doc(db,"shared",key));if(!oldDoc.exists())continue;const html=oldDoc.data().html||"";if(!html.trim())continue;const tempDiv=document.createElement("div");tempDiv.innerHTML=html;const blocks=tempDiv.querySelectorAll(":scope > div, :scope > p");let lines=blocks.length>0?[...blocks].map(b=>b.innerHTML||""):html.split(/<br\s*\/?>/i).map(l=>l.trim()).filter(l=>l!=="");if(!lines.length)lines=[html];await Promise.all(lines.map((lineHtml,i)=>setDoc(doc(db,`shared_lines_${key}`,`line_${i}`),{html:lineHtml,idx:i,updatedBy:"migration",updatedAt:new Date().toISOString()})));}await setDoc(doc(db,"settings","migration_done"),{shared_lines:true,migratedAt:new Date().toISOString()},{merge:true});}catch(e){console.error("마이그레이션 실패:",e);}}
 
-function initData(){migrateSharedData();onSnapshot(doc(db,"settings","telegram_ids"),snap=>{if(!snap.exists())return;companies=snap.data();renderCompanies();});onSnapshot(collection(db,"loans"),snap=>{allLoans=snap.docs.map(d=>({id:d.id,...d.data()}));renderCompanies();renderNotifPanel();renderBankStats();if(activeStatusFilter)renderLoans();else if($("search-input")&&$("search-input").value.trim())renderLoans();});initLineEditor("progress-editor","progress-search","progress","progress-save-indicator","progress-lock-indicator");initLineEditor("notice-editor","notice-search","notice","notice-save-indicator","notice-lock-indicator");onSnapshot(collection(db,"products"),snap=>{products=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));renderProductList();});initWeeklyStats();initStatsEdit();initDrawer();initLoanInnerTabs();initResizers();$("add-btn").addEventListener("click",addCustomer);$("add-input").addEventListener("keydown",e=>{if(e.key==="Enter")addCustomer();});$("search-input").addEventListener("input",()=>{const kw=$("search-input").value;$("loan-title").textContent=kw?("검색: "+kw):(selectedCompany||"업체를 선택하세요");renderLoans();});$("share-btn").addEventListener("click",shareToTelegram);$("c-add-btn").addEventListener("click",addCompany);const csi=$("company-search-input");if(csi)csi.addEventListener("input",renderCompanies);$("product-add-btn").addEventListener("click",()=>showProductForm(null));$("product-search").addEventListener("input",renderProductList);initNotifBtn();initCompanyMgmt();initChipFilter();onSnapshot(doc(db,"settings","status_chips"),snap=>{if(snap.exists()&&snap.data().chips)statusChips=snap.data().chips;renderStatusFilterBar();if(activeStatusFilter)renderLoans();});renderStatusFilterBar();}
+function initData(){migrateSharedData();onSnapshot(doc(db,"settings","telegram_ids"),snap=>{if(!snap.exists())return;companies=snap.data();renderCompanies();});onSnapshot(collection(db,"loans"),snap=>{allLoans=snap.docs.map(d=>({id:d.id,...d.data()}));renderCompanies();renderNotifPanel();renderBankStats();if(activeStatusFilter)renderLoans();else if($("search-input")&&$("search-input").value.trim())renderLoans();});initLineEditor("progress-editor","progress-search","progress","progress-save-indicator","progress-lock-indicator");initLineEditor("notice-editor","notice-search","notice","notice-save-indicator","notice-lock-indicator");onSnapshot(collection(db,"products"),snap=>{products=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));renderProductList();});initWeeklyStats();initStatsEdit();initDrawer();initLoanInnerTabs();initResizers();$("add-btn").addEventListener("click",addCustomer);$("add-input").addEventListener("keydown",e=>{if(e.key==="Enter")addCustomer();});$("search-input").addEventListener("input",()=>{const kw=$("search-input").value;$("loan-title").textContent=kw?("검색: "+kw):(selectedCompany||"업체를 선택하세요");renderLoans();});$("share-btn").addEventListener("click",shareToTelegram);$("c-add-btn").addEventListener("click",addCompany);const csi=$("company-search-input");if(csi)csi.addEventListener("input",renderCompanies);$("product-add-btn").addEventListener("click",()=>showProductForm(null));$("product-search").addEventListener("input",renderProductList);initNotifBtn();initCompanyMgmt();initNoticeBar();initChipFilter();onSnapshot(doc(db,"settings","status_chips"),snap=>{if(snap.exists()&&snap.data().chips)statusChips=snap.data().chips;renderStatusFilterBar();if(activeStatusFilter)renderLoans();});renderStatusFilterBar();}
 
 async function initLineEditor(editorId,searchId,dbKey,indicatorId,lockIndicatorId){const editor=$(editorId);const indicator=indicatorId?$(indicatorId):null;const lockEl=lockIndicatorId?$(lockIndicatorId):null;if(!editor)return;let saveTimers={};let lastSavedLines={};let isApplying=false;let iAmLocked=false;let lockRenewTimer=null;let lockReleaseTimer=null;const LOCK_TTL=5*60*1000;
 function showIndicator(state){if(!indicator)return;indicator.className="save-indicator "+state;indicator.classList.remove("hidden");if(state==="saving")indicator.textContent="저장 중...";else if(state==="saved"){indicator.textContent="✓ 저장됨";setTimeout(()=>indicator.classList.add("hidden"),2000);}else if(state==="conflict")indicator.textContent="⚠ 충돌";}
@@ -891,9 +935,18 @@ let initialLoadDone=false;
 onSnapshot(collection(db,`shared_lines_${dbKey}`),snap=>{
   if(!initialLoadDone){initialLoadDone=true;return;}
   if(iAmLocked)return;
-  snap.docChanges().forEach(change=>{const d=change.doc;const key=d.id;const html=d.data().html||"";const idx=d.data().idx??parseInt(key.replace("line_",""));if(lastSavedLines[key]===html)return;isApplying=true;const lines=editor.querySelectorAll(":scope > div, :scope > p");if(change.type==="removed"){if(lines[idx])lines[idx].remove();}else{if(lines[idx]){if(lines[idx].innerHTML!==html)lines[idx].innerHTML=html;}else{const newDiv=document.createElement("div");newDiv.innerHTML=html;const allLines=editor.querySelectorAll(":scope > div, :scope > p");if(!allLines.length||idx>=allLines.length)editor.appendChild(newDiv);else editor.insertBefore(newDiv,allLines[idx]);}}lastSavedLines[key]=html;isApplying=false;});
+  let anyChanged=false;
+  snap.docChanges().forEach(change=>{const key=change.doc.id;const html=change.doc.data().html||"";if(lastSavedLines[key]!==html)anyChanged=true;});
+  if(!anyChanged)return;
+  const allDocs=snap.docs.map(d=>({key:d.id,idx:d.data().idx??parseInt(d.id.replace("line_","")),html:d.data().html||""})).sort((a,b)=>a.idx-b.idx);
+  const scrollTop=editor.scrollTop;
+  isApplying=true;
+  editor.innerHTML=allDocs.map(({html})=>`<div>${html}</div>`).join("");
+  allDocs.forEach(({key,html})=>{lastSavedLines[key]=html;});
+  isApplying=false;
+  editor.scrollTop=scrollTop;
 });
-editor.addEventListener("input",()=>{if(isApplying)return;const isEmpty=editor.innerHTML===""||editor.innerHTML==="<br>";if(isEmpty){const existingKeys=Object.keys(lastSavedLines);if(existingKeys.length>0){showIndicator("saving");clearTimeout(saveTimers["__clear__"]);saveTimers["__clear__"]=setTimeout(async()=>{try{await setDoc(doc(db,`shared_lines_${dbKey}`,"line_0"),{html:"",idx:0,updatedBy:myNickname,updatedAt:new Date().toISOString()},{merge:true});await Promise.all(existingKeys.filter(k=>k!=="line_0").map(k=>deleteDoc(doc(db,`shared_lines_${dbKey}`,k))));lastSavedLines={"line_0":""};showIndicator("saved");}catch(e){showIndicator("conflict");}},600);}return;}const blocks=editor.querySelectorAll(":scope > div, :scope > p");const lineArr=blocks.length>0?[...blocks]:[editor];lineArr.forEach((line,i)=>{const key=`line_${i}`;const html=line===editor?editor.innerHTML:(line.innerHTML||"");if(lastSavedLines[key]===html)return;clearTimeout(saveTimers[key]);showIndicator("saving");saveTimers[key]=setTimeout(async()=>{try{await setDoc(doc(db,`shared_lines_${dbKey}`,key),{html,idx:i,updatedBy:myNickname,updatedAt:new Date().toISOString()},{merge:true});lastSavedLines[key]=html;showIndicator("saved");}catch(e){showIndicator("conflict");}},600);});});
+editor.addEventListener("input",()=>{if(isApplying)return;const isEmpty=editor.innerHTML===""||editor.innerHTML==="<br>";if(isEmpty){const existingKeys=Object.keys(lastSavedLines);if(existingKeys.length>0){showIndicator("saving");clearTimeout(saveTimers["__clear__"]);saveTimers["__clear__"]=setTimeout(async()=>{try{await setDoc(doc(db,`shared_lines_${dbKey}`,"line_0"),{html:"",idx:0,updatedBy:myNickname,updatedAt:new Date().toISOString()},{merge:true});await Promise.all(existingKeys.filter(k=>k!=="line_0").map(k=>deleteDoc(doc(db,`shared_lines_${dbKey}`,k))));lastSavedLines={"line_0":""};showIndicator("saved");}catch(e){showIndicator("conflict");}},600);}return;}const blocks=editor.querySelectorAll(":scope > div, :scope > p");const lineArr=blocks.length>0?[...blocks]:[editor];lineArr.forEach((line,i)=>{const key=`line_${i}`;const html=line===editor?editor.innerHTML:(line.innerHTML||"");if(lastSavedLines[key]===html)return;clearTimeout(saveTimers[key]);showIndicator("saving");saveTimers[key]=setTimeout(async()=>{try{await setDoc(doc(db,`shared_lines_${dbKey}`,key),{html,idx:i,updatedBy:myNickname,updatedAt:new Date().toISOString()},{merge:true});lastSavedLines[key]=html;showIndicator("saved");}catch(e){showIndicator("conflict");}},600);});clearTimeout(saveTimers["__cleanup__"]);saveTimers["__cleanup__"]=setTimeout(async()=>{const curBlocks=editor.querySelectorAll(":scope > div, :scope > p");const curLineArr=curBlocks.length>0?[...curBlocks]:[editor];const curKeys=new Set(curLineArr.map((_,i)=>`line_${i}`));const staleKeys=Object.keys(lastSavedLines).filter(k=>!curKeys.has(k));if(staleKeys.length>0){try{await Promise.all(staleKeys.map(k=>deleteDoc(doc(db,`shared_lines_${dbKey}`,k))));staleKeys.forEach(k=>delete lastSavedLines[k]);}catch(e){}}},1000);});
 editor.addEventListener("contextmenu",e=>{e.preventDefault();savedRange=saveSelection();showCtxMenu(e.clientX,e.clientY);});
 editor.addEventListener("copy",e=>{const sel=window.getSelection();if(!sel||sel.isCollapsed)return;e.preventDefault();e.clipboardData.setData("text/plain",editorSelectionToText(sel));});
 const searchEl=$(searchId);if(searchEl){searchEl.addEventListener("keydown",e=>{if(e.key==="Enter"){clearHighlights(editor);const kw=searchEl.value.trim();if(kw)highlightName(editor,kw);}if(e.key==="Escape"){clearHighlights(editor);searchEl.value="";}});searchEl.addEventListener("input",e=>{if(!e.target.value)clearHighlights(editor);});}}
@@ -910,6 +963,80 @@ window.ctxColor=(color)=>{hideCtxMenu();restoreSelection();document.execCommand(
 function editorSelectionToText(sel){const frag=sel.getRangeAt(0).cloneContents();const tmp=document.createElement("div");tmp.appendChild(frag);tmp.querySelectorAll("br").forEach(br=>br.replaceWith("\n"));let first=true;tmp.querySelectorAll("div,p").forEach(el=>{if(first){first=false;return;}el.prepend("\n");});return(tmp.innerText||tmp.textContent||"").replace(/\n{3,}/g,"\n\n");}
 function highlightName(editor,kw){const walker=document.createTreeWalker(editor,NodeFilter.SHOW_TEXT);const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);nodes.forEach(node=>{const lines=node.textContent.split("\n");let result="",matched=false;lines.forEach((line,i)=>{const nm=line.match(/^([가-힣a-zA-Z0-9\(\)]+)/);const name=nm?nm[1]:"";if(name&&name.toLowerCase().includes(kw.toLowerCase())){result+=line.replace(name,`<mark class='hl'>${name}</mark>`);matched=true;}else result+=line;if(i<lines.length-1)result+="\n";});if(matched){const span=document.createElement("span");span.innerHTML=result;node.parentNode.replaceChild(span,node);}});const first=editor.querySelector(".hl");if(first)first.scrollIntoView({block:"center"});}
 function clearHighlights(editor){editor.querySelectorAll("mark.hl").forEach(m=>m.parentNode.replaceChild(document.createTextNode(m.textContent),m));editor.normalize();}
+
+function initNoticeBar(){
+  let notices=[];
+  let currentIdx=0;
+  let slideTimer=null;
+  const textEl=$("notice-text");
+  const counterEl=$("notice-counter");
+
+  function updateDisplay(){
+    if(!notices.length){textEl.textContent="";counterEl.textContent="";return;}
+    textEl.textContent=notices[currentIdx];
+    counterEl.textContent=notices.length>1?`${currentIdx+1}/${notices.length}`:"";
+  }
+
+  function slide(){
+    if(notices.length<=1)return;
+    textEl.classList.add("slide-out");
+    setTimeout(()=>{
+      currentIdx=(currentIdx+1)%notices.length;
+      textEl.classList.remove("slide-out");
+      textEl.classList.add("slide-in");
+      updateDisplay();
+      requestAnimationFrame(()=>requestAnimationFrame(()=>textEl.classList.remove("slide-in")));
+    },250);
+  }
+
+  function startSlide(){
+    clearInterval(slideTimer);
+    if(notices.length>1)slideTimer=setInterval(slide,5000);
+  }
+
+  function renderNoticeModal(){
+    const list=$("notice-modal-list");
+    if(!list)return;
+    if(!notices.length){list.innerHTML=`<div class="notice-empty">등록된 공지가 없습니다</div>`;return;}
+    list.innerHTML=notices.map((txt,i)=>`<div class="notice-modal-item"><span title="${esc(txt)}">${esc(txt)}</span><button class="notice-del-btn" data-idx="${i}" title="삭제">✕</button></div>`).join("");
+    list.querySelectorAll(".notice-del-btn").forEach(btn=>{
+      btn.addEventListener("click",async()=>{
+        const idx=parseInt(btn.dataset.idx);
+        const newItems=[...notices];
+        newItems.splice(idx,1);
+        await setDoc(doc(db,"settings","notices"),{items:newItems});
+      });
+    });
+  }
+
+  onSnapshot(doc(db,"settings","notices"),snap=>{
+    notices=snap.exists()?(snap.data().items||[]):[];
+    if(currentIdx>=notices.length)currentIdx=0;
+    updateDisplay();
+    startSlide();
+    renderNoticeModal();
+  });
+
+  $("notice-edit-btn").addEventListener("click",()=>{
+    $("notice-mgmt-modal").classList.remove("hidden");
+    renderNoticeModal();
+  });
+
+  $("notice-mgmt-close").addEventListener("click",()=>$("notice-mgmt-modal").classList.add("hidden"));
+  $("notice-mgmt-modal").addEventListener("click",e=>{if(e.target===$("notice-mgmt-modal"))$("notice-mgmt-modal").classList.add("hidden");});
+
+  async function addNotice(){
+    const input=$("notice-modal-input");
+    const text=input.value.trim();
+    if(!text)return;
+    const newItems=[...notices,text];
+    await setDoc(doc(db,"settings","notices"),{items:newItems});
+    input.value="";
+  }
+
+  $("notice-modal-add-btn").addEventListener("click",addNotice);
+  $("notice-modal-input").addEventListener("keydown",e=>{if(e.key==="Enter")addNotice();});
+}
 // ══════════════════════════════════
 // 날짜 알림 시스템 — 진행현황(loans) 기반
 // ══════════════════════════════════
